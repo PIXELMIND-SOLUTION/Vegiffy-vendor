@@ -152,10 +152,10 @@ class _CompletedBookingState extends State<CompletedBooking> {
                           value: 'view',
                           child: Text("View"),
                         ),
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Text("Update Status"),
-                        ),
+                        // PopupMenuItem(
+                        //   value: 'edit',
+                        //   child: Text("Update Status"),
+                        // ),
                         // PopupMenuItem(
                         //   value: 'pdf',
                         //   child: Text("Invoice PDF"),

@@ -163,7 +163,7 @@ class _BookingListScreenState extends State<BookingListScreen> {
     "All",
     "Pending",
     "Accepted",
-    "Completed",
+    "Delivered",
     "Cancelled",
     "Rejected",
   ];
@@ -767,6 +767,7 @@ class _BookingListScreenState extends State<BookingListScreen> {
                           ],
                         ),
                       ),
+                      if(booking.status != 'Delivered')
                       const PopupMenuItem<String>(
                         value: 'edit',
                         child: Row(

@@ -111,7 +111,7 @@ class BookingService {
         .where(
           (order) =>
               order.status != null &&
-              order.status!.toLowerCase() == "completed",
+              order.status!.toLowerCase() == "delivered",
         )
         .toList();
   }

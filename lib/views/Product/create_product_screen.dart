@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
 import 'package:vegiffyy_vendor/models/Category/category_model.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
 import 'package:vegiffyy_vendor/providers/Category/category_provider.dart';
 import 'package:vegiffyy_vendor/services/Product/product_service.dart';
 import 'package:vegiffyy_vendor/views/Product/product_list_screen.dart';
+import 'package:vegiffyy_vendor/views/dashboard/vendor_main_screen.dart';
 
 class CreateProductScreen extends StatefulWidget {
   const CreateProductScreen({super.key});
@@ -107,7 +109,11 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       _showSnackBar("Products created successfully!", isSuccess: true);
 Navigator.pushAndRemoveUntil(
   context,
-  MaterialPageRoute(builder: (_) => const ProductListScreen()),
+  MaterialPageRoute(
+    builder: (_) => const VendorMainScreen(
+      initialSection: VendorSection.allProducts,
+    ),
+  ),
   (route) => false,
 );
     } catch (e) {
@@ -311,7 +317,7 @@ Navigator.pushAndRemoveUntil(
                             Text(
                               "Create ${products.length} Product${products.length != 1 ? 's' : ''}",
                               style: theme.textTheme.labelLarge?.copyWith(
-                                color: theme.colorScheme.onPrimary,
+                                color: Colors.black,
                                 fontSize: 16,
                               ),
                             ),

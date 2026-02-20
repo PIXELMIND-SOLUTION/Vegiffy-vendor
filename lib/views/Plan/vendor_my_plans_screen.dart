@@ -232,19 +232,19 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
                         Text(b),
                       ],
                     )),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        selectedPlan = plan;
-                        showPlanModal = true;
-                      });
-                    },
-                    child: const Text("View Details"),
-                  ),
-                )
+                // const SizedBox(height: 12),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: OutlinedButton(
+                //     onPressed: () {
+                //       setState(() {
+                //         selectedPlan = plan;
+                //         showPlanModal = true;
+                //       });
+                //     },
+                //     child: const Text("View Details"),
+                //   ),
+                // )
               ],
             ),
           ),
