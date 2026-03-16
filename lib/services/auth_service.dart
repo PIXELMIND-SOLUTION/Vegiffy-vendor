@@ -9,24 +9,48 @@ class AuthService {
 
   AuthService({http.Client? client}) : _client = client ?? http.Client();
 
-  Future<VendorLoginResponse> loginVendor({
-    required String email,
-    required String password,
-  }) async {
-    final uri = Uri.parse(ApiConstants.vendorLogin);
-    final response = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+Future<VendorLoginResponse> loginVendor({
+  required String email,
+  required String password,
+}) async {
+  final uri = Uri.parse(ApiConstants.vendorLogin);
+  final response = await _client.post(
+    uri,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'email': email, 'password': password}),
+  );
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final data = jsonDecode(response.body);
-      return VendorLoginResponse.fromJson(data);
-    } else {
-      throw Exception('Login failed (code: ${response.statusCode})');
+  print("kkkkkkkkkkkkkkkkkkkkkkkkk${response.body}");
+
+  if (response.statusCode >= 200 && response.statusCode < 300) {
+    final data = jsonDecode(response.body);
+    return VendorLoginResponse.fromJson(data);
+  } else {
+    // Try to get error message and contact details from response body
+    String errorMessage = 'Login failed (code: ${response.statusCode})';
+    
+    try {
+      final errorData = jsonDecode(response.body);
+      if (errorData['message'] != null) {
+        errorMessage = errorData['message'];
+        // Append contact details if they exist
+        if (errorData['contactEmail'] != null || errorData['whatsapp'] != null) {
+          errorMessage += '\n\nContact Support:';
+          if (errorData['contactEmail'] != null) {
+            errorMessage += '\n📧 ${errorData['contactEmail']}';
+          }
+          if (errorData['whatsapp'] != null) {
+            errorMessage += '\n📱 ${errorData['whatsapp']}';
+          }
+        }
+      }
+    } catch (e) {
+      // If response body is not valid JSON, use default message
     }
+    
+    throw Exception(errorMessage);
   }
+}
 
   Future<VerifyOtpResponse> verifyOtp({
     required String vendorId,

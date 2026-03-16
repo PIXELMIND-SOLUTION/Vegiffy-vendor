@@ -926,14 +926,14 @@ class _VendorDrawer extends StatelessWidget {
                 _item(Icons.dashboard, 'Dashboard', VendorSection.dashboard),
                 _item(Icons.notifications, 'Notifications',
                     VendorSection.notifications),
-                ExpansionTile(
-                  leading: const Icon(Icons.category),
-                  title: const Text('Categories'),
-                  children: [
-                    _sub('Add Category', VendorSection.addCategory),
-                    _sub('All Categories', VendorSection.allCategories),
-                  ],
-                ),
+                // ExpansionTile(
+                //   leading: const Icon(Icons.category),
+                //   title: const Text('Categories'),
+                //   children: [
+                //     _sub('Add Category', VendorSection.addCategory),
+                //     _sub('All Categories', VendorSection.allCategories),
+                //   ],
+                // ),
                 ExpansionTile(
                   leading: const Icon(Icons.fastfood),
                   title: const Text('Products'),
