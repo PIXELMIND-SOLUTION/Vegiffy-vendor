@@ -32,8 +32,11 @@ import '../auth/login_screen.dart';
 import 'vendor_dashboard_screen.dart';
 
 class VendorMainScreen extends StatefulWidget {
-   final VendorSection initialSection;
-  const VendorMainScreen({super.key,this.initialSection = VendorSection.dashboard,});
+  final VendorSection initialSection;
+  const VendorMainScreen({
+    super.key,
+    this.initialSection = VendorSection.dashboard,
+  });
 
   @override
   State<VendorMainScreen> createState() => _VendorMainScreenState();
@@ -47,16 +50,17 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
   int _notificationCount = 0;
   bool _loadingNotifications = true;
 
-@override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    context
-        .read<VendorNavigationProvider>()
-        .setSection(widget.initialSection);
-  });
-}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context
+          .read<VendorNavigationProvider>()
+          .setSection(widget.initialSection);
+    });
+  }
+
   void _checkPlanRestriction() {
     final planProvider = context.read<VendorPlanProvider>();
 
@@ -65,274 +69,272 @@ void initState() {
     }
   }
 
-void _showPlanRequiredDialog() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black.withOpacity(0.5),
-    builder: (_) => WillPopScope(
-      onWillPop: () async => false,
-      child: Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        elevation: 8,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
+  void _showPlanRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (_) => WillPopScope(
+        onWillPop: () async => false,
+        child: Dialog(
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                Colors.green.shade50,
-              ],
-            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Animated Icon Container
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.green.shade100,
-                      Colors.green.shade50,
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Outer ring animation
-                    TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 1500),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Container(
-                          width: 80 + (20 * value),
-                          height: 80 + (20 * value),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.green.withOpacity(0.3 * (1 - value)),
-                              width: 2,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Main icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.2),
-                            blurRadius: 15,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 40,
-                        color: Colors.green[700],
-                      ),
-                    ),
-                  ],
-                ),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.green.shade50,
+                ],
               ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                "Plan Required",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Description with enhanced styling
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  children: [
-                    Text(
-                      "To continue using Vegiffyy Vendor app,",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey[600],
-                        height: 1.4,
-                      ),
-                    ),
-                    Text(
-                      "you must purchase a joining plan.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey[600],
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Features / Benefits Preview (Optional)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.green.shade200,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildBenefitChip(Icons.restaurant, "List Business"),
-                    Container(
-                      width: 1,
-                      height: 20,
-                      color: Colors.green.shade200,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    _buildBenefitChip(Icons.currency_rupee, "Start Earning"),
-            
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Action Button with animation
-              TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOutBack,
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: value,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated Icon Container
+                Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
                       colors: [
-                        Colors.green.shade400,
-                        Colors.green.shade600,
+                        Colors.green.shade100,
+                        Colors.green.shade50,
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        color: Colors.green.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Outer ring animation
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Container(
+                            width: 80 + (20 * value),
+                            height: 80 + (20 * value),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color:
+                                    Colors.green.withOpacity(0.3 * (1 - value)),
+                                width: 2,
+                              ),
+                            ),
+                          );
+                        },
                       ),
+                      // Main icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.2),
+                              blurRadius: 15,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 40,
+                          color: Colors.green[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  "Plan Required",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Description with enhanced styling
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    children: [
+                      Text(
+                        "To continue using Vegiffyy Vendor app,",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                        ),
+                      ),
+                      Text(
+                        "you must purchase a joining plan.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          height: 1.4,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Features / Benefits Preview (Optional)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green.shade200,
+                      width: 1,
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const VendorJoiningFeeScreen(),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "View Available Plans",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 20,
-                          color: Colors.white.withOpacity(0.9),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildBenefitChip(Icons.restaurant, "List Business"),
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.green.shade200,
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      _buildBenefitChip(Icons.currency_rupee, "Start Earning"),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Action Button with animation
+                TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutBack,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.shade400,
+                          Colors.green.shade600,
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorJoiningFeeScreen(),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "View Available Plans",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 20,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-
-
-   
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
 // Helper widget for benefit chips
-Widget _buildBenefitChip(IconData icon, String label) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(
-        icon,
-        size: 14,
-        color: Colors.green.shade700,
-      ),
-      const SizedBox(width: 4),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Colors.green.shade800,
+  Widget _buildBenefitChip(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 14,
+          color: Colors.green.shade700,
         ),
-      ),
-    ],
-  );
-}
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.green.shade800,
+          ),
+        ),
+      ],
+    );
+  }
 
   int _bottomIndexFromSection(VendorSection section) {
     switch (section) {
@@ -683,34 +685,34 @@ Widget _buildBenefitChip(IconData icon, String label) {
                 children: [
                   const Icon(Icons.notifications_outlined,
                       color: Colors.black87),
-                  if (_notificationCount > 0)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          '$_notificationCount',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                  // if (_notificationCount > 0)
+                  //   Positioned(
+                  //     right: -2,
+                  //     top: -2,
+                  //     child: Container(
+                  //       padding: const EdgeInsets.symmetric(
+                  //         horizontal: 5,
+                  //         vertical: 2,
+                  //       ),
+                  //       decoration: BoxDecoration(
+                  //         color: Colors.red,
+                  //         borderRadius: BorderRadius.circular(10),
+                  //       ),
+                  //       constraints: const BoxConstraints(
+                  //         minWidth: 16,
+                  //         minHeight: 16,
+                  //       ),
+                  //       child: Text(
+                  //         '$_notificationCount',
+                  //         textAlign: TextAlign.center,
+                  //         style: const TextStyle(
+                  //           color: Colors.white,
+                  //           fontSize: 10,
+                  //           fontWeight: FontWeight.bold,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
                 ],
               ),
               onPressed: () {

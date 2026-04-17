@@ -1,124 +1,5 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:fl_chart/fl_chart.dart';
-
-// import '../../providers/auth_provider.dart';
-// import '../../providers/dashboard_provider.dart';
-// import '../../models/dashboard_models.dart';
-// import '../../utils/responsive.dart';
-
-// class VendorDashboardScreen extends StatefulWidget {
-//   const VendorDashboardScreen({super.key});
-
-//   @override
-//   State<VendorDashboardScreen> createState() => _VendorDashboardScreenState();
-// }
-
-// class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
-//   bool _initialized = false;
-//   String? _vendorId;
-
-//   @override
-//   void didChangeDependencies() {
-//     super.didChangeDependencies();
-//     if (!_initialized) {
-//       final auth = context.read<AuthProvider>();
-//       final vendor = auth.vendor;
-//       if (vendor != null && vendor.id.isNotEmpty) {
-//         _vendorId = vendor.id;
-//         context.read<DashboardProvider>().loadAll(vendor.id);
-//       }
-//       _initialized = true;
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-//     final isMobile = Responsive.isMobile(context);
-//     final isDesktop = Responsive.isDesktop(context);
-
-//     final padding = EdgeInsets.symmetric(
-//       horizontal: isMobile ? 12 : 24,
-//       vertical: isMobile ? 12 : 20,
-//     );
-
-//     return Container(
-//       color: theme.colorScheme.surfaceVariant.withOpacity(0.05),
-//       child: Consumer<DashboardProvider>(
-//         builder: (context, dash, _) {
-//           if (dash.isLoading && dash.stats == null) {
-//             return Center(
-//               child: CircularProgressIndicator(
-//                 color: theme.colorScheme.primary,
-//               ),
-//             );
-//           }
-
-//           if (dash.status == DashboardStatus.error && dash.stats == null) {
-//             return Center(
-//               child: Padding(
-//                 padding: const EdgeInsets.symmetric(horizontal: 24),
-//                 child: Text(
-//                   dash.errorMessage ?? 'Failed to load dashboard',
-//                   style: theme.textTheme.bodyMedium?.copyWith(
-//                     color: theme.colorScheme.error,
-//                     fontWeight: FontWeight.w500,
-//                   ),
-//                   textAlign: TextAlign.center,
-//                 ),
-//               ),
-//             );
-//           }
-
-//           final stats = dash.stats;
-
-//           return Stack(
-//             children: [
-//               SingleChildScrollView(
-//                 padding: padding,
-//                 child: Center(
-//                   child: ConstrainedBox(
-//                     constraints:
-//                         BoxConstraints(maxWidth: isDesktop ? 1200 : 900),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.stretch,
-//                       children: [
-//                         _HeaderBar(dash: dash),
-//                         const SizedBox(height: 16),
-//                         _StatsGrid(stats: stats, dash: dash),
-//                         const SizedBox(height: 24),
-//                         _ChartsRow(dash: dash),
-//                         const SizedBox(height: 24),
-//                         _BottomSection(dash: dash),
-//                         const SizedBox(height: 24),
-//                         _QuickOverview(dash: dash),
-//                         const SizedBox(height: 24),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               ),
-
-//               if (dash.showBuffer &&
-//                   dash.currentBufferOrder != null &&
-//                   _vendorId != null)
-//                 _BufferModalOverlay(
-//                   dash: dash,
-//                   vendorId: _vendorId!,
-//                 ),
-//             ],
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
-
-
-
-
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -179,34 +60,33 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   // }
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final auth = context.read<AuthProvider>();
-    final vendor = auth.vendor;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = context.read<AuthProvider>();
+      final vendor = auth.vendor;
 
-    if (vendor == null || vendor.id.isEmpty) return;
+      if (vendor == null || vendor.id.isEmpty) return;
 
-    _vendorId = vendor.id;
-    _dash = context.read<DashboardProvider>();
+      _vendorId = vendor.id;
+      _dash = context.read<DashboardProvider>();
 
-    /// Initial load
-    _dash!.loadAll(_vendorId!);
+      /// Initial load
+      _dash!.loadAll(_vendorId!);
 
-    /// ✅ GUARANTEED 5-SEC POLLING
-    _pendingTimer = Timer.periodic(
-      const Duration(seconds: 5),
-      (_) {
-        if (!mounted) return;
+      /// ✅ GUARANTEED 5-SEC POLLING
+      _pendingTimer = Timer.periodic(
+        const Duration(seconds: 5),
+        (_) {
+          if (!mounted) return;
 
-        debugPrint('⏱ Calling pending orders API...');
-        _dash!.loadPendingOrders(_vendorId!); // 👈 IMPORTANT
-      },
-    );
-  });
-}
-
+          debugPrint('⏱ Calling pending orders API...');
+          _dash!.loadPendingOrders(_vendorId!); // 👈 IMPORTANT
+        },
+      );
+    });
+  }
 
   @override
   void dispose() {
@@ -256,32 +136,44 @@ void initState() {
 
           return Stack(
             children: [
-              SingleChildScrollView(
-                controller: _scrollController, // ✅ ATTACHED
-                padding: padding,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints:
-                        BoxConstraints(maxWidth: isDesktop ? 1200 : 900),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _HeaderBar(dash: dash),
-                        const SizedBox(height: 16),
-                        _StatsGrid(stats: dash.stats, dash: dash),
-                        const SizedBox(height: 24),
-                        _ChartsRow(dash: dash),
-                        const SizedBox(height: 24),
-                        _BottomSection(dash: dash),
-                        const SizedBox(height: 24),
-                        _QuickOverview(dash: dash),
-                        const SizedBox(height: 24),
-                      ],
+              RefreshIndicator(
+                onRefresh: () async {
+                  // Reload all dashboard data
+                  if (_vendorId != null) {
+                    await _dash?.loadAll(_vendorId!);
+                    // Also reload pending orders
+                    await _dash?.loadPendingOrders(_vendorId!);
+                  }
+                },
+                color: theme.colorScheme.primary,
+                backgroundColor: Colors.white,
+                strokeWidth: 2,
+                child: SingleChildScrollView(
+                  controller: _scrollController, // ✅ ATTACHED
+                  padding: padding,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(maxWidth: isDesktop ? 1200 : 900),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _HeaderBar(dash: dash),
+                          const SizedBox(height: 16),
+                          _StatsGrid(stats: dash.stats, dash: dash),
+                          const SizedBox(height: 24),
+                          _ChartsRow(dash: dash),
+                          const SizedBox(height: 24),
+                          _BottomSection(dash: dash),
+                          const SizedBox(height: 24),
+                          _QuickOverview(dash: dash),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-
               if (dash.showBuffer &&
                   dash.currentBufferOrder != null &&
                   _vendorId != null)
@@ -684,8 +576,7 @@ class _SalesChartCard extends StatelessWidget {
                                   padding: const EdgeInsets.only(top: 4),
                                   child: Text(
                                     data[idx].name,
-                                    style:
-                                        theme.textTheme.labelSmall?.copyWith(
+                                    style: theme.textTheme.labelSmall?.copyWith(
                                       fontSize: 10,
                                     ),
                                   ),
@@ -1466,8 +1357,8 @@ class _TopProductsCard extends StatelessWidget {
                             height: 32,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: theme.colorScheme.primary
-                                  .withOpacity(0.06),
+                              color:
+                                  theme.colorScheme.primary.withOpacity(0.06),
                             ),
                             alignment: Alignment.center,
                             child: Text(
@@ -1522,7 +1413,277 @@ class _TopProductsCard extends StatelessWidget {
 // ---------- BUFFER MODAL (ACCEPT / REJECT) ----------
 //
 
-class _BufferModalOverlay extends StatelessWidget {
+// class _BufferModalOverlay extends StatelessWidget {
+//   final DashboardProvider dash;
+//   final String vendorId;
+
+//   const _BufferModalOverlay({
+//     required this.dash,
+//     required this.vendorId,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
+//     final order = dash.currentBufferOrder!;
+//     final user = order.user;
+//     final address = order.deliveryAddress;
+
+//     return Positioned.fill(
+//       child: Container(
+//         color: Colors.black.withOpacity(0.5),
+//         child: Center(
+//           child: ConstrainedBox(
+//             constraints: const BoxConstraints(maxWidth: 600),
+//             child: Card(
+//               elevation: 6,
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(24),
+//               ),
+//               child: Padding(
+//                 padding: const EdgeInsets.all(18),
+//                 child: SingleChildScrollView(
+//                   child: Column(
+//                     mainAxisSize: MainAxisSize.min,
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Row(
+//                         children: [
+//                           Container(
+//                             width: 24,
+//                             height: 24,
+//                             decoration: BoxDecoration(
+//                               color:
+//                                   theme.colorScheme.primary.withOpacity(0.12),
+//                               borderRadius: BorderRadius.circular(8),
+//                             ),
+//                             child: Icon(
+//                               Icons.notifications_active_rounded,
+//                               color: theme.colorScheme.primary,
+//                               size: 16,
+//                             ),
+//                           ),
+//                           const SizedBox(width: 8),
+//                           Expanded(
+//                             child: Text(
+//                               'New Order Alert',
+//                               style: theme.textTheme.titleMedium?.copyWith(
+//                                 fontWeight: FontWeight.w700,
+//                               ),
+//                             ),
+//                           ),
+//                           IconButton(
+//                             icon: const Icon(Icons.close_rounded),
+//                             splashRadius: 20,
+//                             onPressed: dash.closeBuffer,
+//                           ),
+//                         ],
+//                       ),
+//                       const SizedBox(height: 12),
+//                       const Divider(height: 1),
+//                       const SizedBox(height: 12),
+//                       Text(
+//                         'Order #${order.id.substring(order.id.length - 8)}',
+//                         style: theme.textTheme.bodyLarge?.copyWith(
+//                           fontWeight: FontWeight.w700,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       Wrap(
+//                         spacing: 8,
+//                         runSpacing: 4,
+//                         children: [
+//                           Chip(
+//                             padding: EdgeInsets.zero,
+//                             backgroundColor:
+//                                 theme.colorScheme.primary.withOpacity(0.06),
+//                             side: BorderSide(
+//                               color: theme.colorScheme.primary.withOpacity(0.3),
+//                               width: 0.4,
+//                             ),
+//                             label: Row(
+//                               mainAxisSize: MainAxisSize.min,
+//                               children: [
+//                                 Icon(
+//                                   Icons.account_balance_wallet_outlined,
+//                                   size: 16,
+//                                   color: theme.colorScheme.primary,
+//                                 ),
+//                                 const SizedBox(width: 4),
+//                                 Text(order.paymentMethod),
+//                               ],
+//                             ),
+//                           ),
+//                           Chip(
+//                             padding: EdgeInsets.zero,
+//                             backgroundColor: Colors.orange.withOpacity(0.06),
+//                             side: BorderSide(
+//                               color: Colors.orange.withOpacity(0.3),
+//                               width: 0.4,
+//                             ),
+//                             label: Text(
+//                               'Status: ${order.orderStatus}',
+//                               style: TextStyle(
+//                                 color: Colors.orange.shade900,
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       const SizedBox(height: 12),
+//                       if (user != null) ...[
+//                         Text(
+//                           'Customer details',
+//                           style: theme.textTheme.labelLarge?.copyWith(
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 4),
+//                         Container(
+//                           width: double.infinity,
+//                           padding: const EdgeInsets.all(10),
+//                           decoration: BoxDecoration(
+//                             borderRadius: BorderRadius.circular(12),
+//                             color: theme.colorScheme.surfaceVariant
+//                                 .withOpacity(0.25),
+//                           ),
+//                           child: Text(
+//                             'Name: ${user.firstName ?? ''} ${user.lastName ?? ''}\n'
+//                             'Phone: ${user.phoneNumber ?? 'N/A'}\n'
+//                             'Email: ${user.email ?? 'N/A'}',
+//                             style: theme.textTheme.bodySmall,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 8),
+//                       ],
+//                       if (address != null) ...[
+//                         Text(
+//                           'Delivery address',
+//                           style: theme.textTheme.labelLarge?.copyWith(
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 4),
+//                         Container(
+//                           width: double.infinity,
+//                           padding: const EdgeInsets.all(10),
+//                           decoration: BoxDecoration(
+//                             borderRadius: BorderRadius.circular(12),
+//                             color: theme.colorScheme.surfaceVariant
+//                                 .withOpacity(0.25),
+//                           ),
+//                           child: Text(
+//                             '${address.street ?? ''}, ${address.city ?? ''}\n'
+//                             '${address.state ?? ''}, ${address.postalCode ?? ''}\n'
+//                             '${address.country ?? ''}',
+//                             style: theme.textTheme.bodySmall,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 12),
+//                       ],
+//                       Row(
+//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                         children: [
+//                           Text(
+//                             'Order total',
+//                             style: theme.textTheme.bodyMedium?.copyWith(
+//                               color: theme.hintColor,
+//                             ),
+//                           ),
+//                           Text(
+//                             '₹${order.totalPayable.toStringAsFixed(2)}',
+//                             style: theme.textTheme.titleMedium?.copyWith(
+//                               fontWeight: FontWeight.w700,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       const SizedBox(height: 16),
+//                       Row(
+//                         children: [
+//                           Expanded(
+//                             child: OutlinedButton(
+//                               style: OutlinedButton.styleFrom(
+//                                 padding: const EdgeInsets.symmetric(
+//                                   vertical: 12,
+//                                 ),
+//                                 side: BorderSide(
+//                                   color: Colors.redAccent.withOpacity(0.5),
+//                                 ),
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(16),
+//                                 ),
+//                               ),
+//                               onPressed: () {
+//                                 dash.rejectOrder(vendorId, order.id);
+//                               },
+//                               child: Text(
+//                                 'Reject',
+//                                 style: TextStyle(
+//                                   color: Colors.redAccent.shade400,
+//                                   fontWeight: FontWeight.w600,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                           const SizedBox(width: 12),
+//                           Expanded(
+//                             child: ElevatedButton(
+//                               style: ElevatedButton.styleFrom(
+//                                 padding: const EdgeInsets.symmetric(
+//                                   vertical: 12,
+//                                 ),
+//                                 backgroundColor: Colors.green,
+//                                 shape: RoundedRectangleBorder(
+//                                   borderRadius: BorderRadius.circular(16),
+//                                 ),
+//                               ),
+//                               onPressed: () {
+//                                 dash.acceptOrder(vendorId, order.id);
+//                               },
+//                               child: const Text(
+//                                 'Accept',
+//                                 style: TextStyle(
+//                                   fontWeight: FontWeight.w600,
+//                                 ),
+//                               ),
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                       if (dash.bufferOrders.length > 1) ...[
+//                         const SizedBox(height: 8),
+//                         Align(
+//                           alignment: Alignment.center,
+//                           child: TextButton.icon(
+//                             onPressed: dash.nextBufferOrder,
+//                             icon: const Icon(
+//                               Icons.skip_next_rounded,
+//                               size: 18,
+//                             ),
+//                             label: Text(
+//                               'Next order (${dash.bufferOrders.length - 1} more)',
+//                             ),
+//                           ),
+//                         ),
+//                       ],
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+//
+// ---------- BUFFER MODAL (ACCEPT / REJECT) WITH AUDIO ----------
+//
+
+class _BufferModalOverlay extends StatefulWidget {
   final DashboardProvider dash;
   final String vendorId;
 
@@ -1532,9 +1693,40 @@ class _BufferModalOverlay extends StatelessWidget {
   });
 
   @override
+  State<_BufferModalOverlay> createState() => _BufferModalOverlayState();
+}
+
+class _BufferModalOverlayState extends State<_BufferModalOverlay> {
+  bool _hasPlayedSound = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _playNewOrderSound();
+  }
+
+  Future<void> _playNewOrderSound() async {
+    if (_hasPlayedSound) return;
+    _hasPlayedSound = true;
+
+    try {
+      await _audioPlayer.play(AssetSource('audio/new_order.mp3'));
+    } catch (e) {
+      debugPrint('Error playing sound: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final order = dash.currentBufferOrder!;
+    final order = widget.dash.currentBufferOrder!;
     final user = order.user;
     final address = order.deliveryAddress;
 
@@ -1581,22 +1773,53 @@ class _BufferModalOverlay extends StatelessWidget {
                               ),
                             ),
                           ),
+                          // Sound indicator icon
+                          IconButton(
+                            icon: const Icon(Icons.volume_up, size: 18),
+                            onPressed: _playNewOrderSound,
+                            tooltip: 'Play sound again',
+                          ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
                             splashRadius: 20,
-                            onPressed: dash.closeBuffer,
+                            onPressed: widget.dash.closeBuffer,
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       const Divider(height: 1),
                       const SizedBox(height: 12),
-                      Text(
-                        'Order #${order.id.substring(order.id.length - 8)}',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+
+                      // Animated bell for new order
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 500),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: 1 + (value * 0.1),
+                            child: child,
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.notifications_active,
+                              color: Colors.orange.shade600,
+                              size: 28,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Order #${order.id.substring(order.id.length - 8)}',
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -1724,7 +1947,8 @@ class _BufferModalOverlay extends StatelessWidget {
                                 ),
                               ),
                               onPressed: () {
-                                dash.rejectOrder(vendorId, order.id);
+                                widget.dash
+                                    .rejectOrder(widget.vendorId, order.id);
                               },
                               child: Text(
                                 'Reject',
@@ -1748,7 +1972,8 @@ class _BufferModalOverlay extends StatelessWidget {
                                 ),
                               ),
                               onPressed: () {
-                                dash.acceptOrder(vendorId, order.id);
+                                widget.dash
+                                    .acceptOrder(widget.vendorId, order.id);
                               },
                               child: const Text(
                                 'Accept',
@@ -1760,18 +1985,18 @@ class _BufferModalOverlay extends StatelessWidget {
                           ),
                         ],
                       ),
-                      if (dash.bufferOrders.length > 1) ...[
+                      if (widget.dash.bufferOrders.length > 1) ...[
                         const SizedBox(height: 8),
                         Align(
                           alignment: Alignment.center,
                           child: TextButton.icon(
-                            onPressed: dash.nextBufferOrder,
+                            onPressed: widget.dash.nextBufferOrder,
                             icon: const Icon(
                               Icons.skip_next_rounded,
                               size: 18,
                             ),
                             label: Text(
-                              'Next order (${dash.bufferOrders.length - 1} more)',
+                              'Next order (${widget.dash.bufferOrders.length - 1} more)',
                             ),
                           ),
                         ),

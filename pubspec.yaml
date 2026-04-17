@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.4+5
+version: 1.0.5+6
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -32,6 +32,7 @@ dependencies:
   share_plus: ^12.0.1
   iconsax: ^0.0.8
   google_fonts: ^6.3.2
+  audioplayers: ^6.6.0
 
 
 dev_dependencies:
@@ -63,4 +64,6 @@ flutter:
     - assets/vegsplash.png
     - assets/websplash.png
     - assets/img.png
+    - assets/audio/new_order.mp3
+
 

@@ -1,125 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import 'package:vegiffyy_vendor/providers/auth_provider.dart';
-// import 'package:vegiffyy_vendor/providers/vendor_plan_provider.dart';
-// import 'package:vegiffyy_vendor/views/auth/login_screen.dart';
-// import 'package:vegiffyy_vendor/views/dashboard/vendor_main_screen.dart';
-// import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
-// import 'package:vegiffyy_vendor/utils/responsive.dart';
-
-// class SplashScreen extends StatefulWidget {
-//   const SplashScreen({super.key});
-
-//   @override
-//   State<SplashScreen> createState() => _SplashScreenState();
-// }
-
-// class _SplashScreenState extends State<SplashScreen> {
-//   @override
-//   void initState() {
-//     super.initState();
-//     _startFlow();
-//   }
-
-// Future<void> _startFlow() async {
-//   await VendorPreferences.init();
-
-//   final authProvider = Provider.of<AuthProvider>(context, listen: false);
-//   final planProvider = Provider.of<VendorPlanProvider>(context, listen: false);
-
-//   await authProvider.checkLoginStatus();
-
-//   if (authProvider.isLoggedIn) {
-//     final vendorId = authProvider.vendor?.id;
-//     if (vendorId != null) {
-//       await planProvider.checkVendorPlan(vendorId);
-//     }
-//   }
-
-//   await Future.delayed(const Duration(seconds: 2));
-
-//   if (!mounted) return;
-
-//   Navigator.pushReplacement(
-//     context,
-//     MaterialPageRoute(
-//       builder: (_) => authProvider.isLoggedIn
-//           ? const VendorMainScreen()
-//           : const LoginScreen(),
-//     ),
-//   );
-// }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Stack(
-//         fit: StackFit.expand,
-//         children: [
-//           // 🔥 FULL SCREEN SPLASH IMAGE
-//           Container(
-//             decoration: const BoxDecoration(
-//               image: DecorationImage(
-//                 image: AssetImage('assets/vegsplash.png'),
-//                 fit: BoxFit.fill,
-//               ),
-//             ),
-//           ),
-
-//           // 🌑 OPTIONAL DARK OVERLAY
-//           Container(
-//             color: Colors.black.withOpacity(0.25),
-//           ),
-
-//           // 🌀 CENTER LOADER / LOGO (OPTIONAL)
-//           SafeArea(
-//             child: Column(
-//               children: const [
-//                 Spacer(),
-//                 CircularProgressIndicator(
-//                   strokeWidth: 3,
-//                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-//                 ),
-//                 Spacer(),
-//               ],
-//             ),
-//           ),
-
-//           // 👇 OPTIONAL BRANDING (BOTTOM)
-//           /*
-//           Positioned(
-//             bottom: 24,
-//             left: 0,
-//             right: 0,
-//             child: Column(
-//               children: [
-//                 Text(
-//                   "Powered by Nemishhrree",
-//                   style: TextStyle(
-//                     fontSize: 12,
-//                     color: Colors.white70,
-//                     letterSpacing: 1.2,
-//                   ),
-//                 ),
-//                 SizedBox(height: 4),
-//                 Text(
-//                   "Operated by JEIPLX",
-//                   style: TextStyle(
-//                     fontSize: 14,
-//                     fontWeight: FontWeight.w600,
-//                     color: Colors.white,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           */
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/providers/auth_provider.dart';
@@ -139,6 +17,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _isLoading = false;
+  String _loadingMessage = "Loading...";
 
   @override
   void initState() {
@@ -149,30 +28,71 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _startFlow() async {
     setState(() {
       _isLoading = true;
+      _loadingMessage = "Initializing...";
     });
 
-    await VendorPreferences.init();
+    try {
+      // Step 1: Initialize preferences
+      setState(() {
+        _loadingMessage = "Setting up preferences...";
+      });
+      await VendorPreferences.init();
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final planProvider =
-        Provider.of<VendorPlanProvider>(context, listen: false);
+      // Step 2: Get providers
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final planProvider =
+          Provider.of<VendorPlanProvider>(context, listen: false);
 
-    await authProvider.checkLoginStatus();
+      // Step 3: Check login status
+      setState(() {
+        _loadingMessage = "Checking login status...";
+      });
+      await authProvider.checkLoginStatus();
 
-    if (authProvider.isLoggedIn) {
-      final vendorId = authProvider.vendor?.id;
-      if (vendorId != null) {
-        await planProvider.checkVendorPlan(vendorId);
+      // Step 4: If logged in, check vendor plan
+      if (authProvider.isLoggedIn) {
+        final vendorId = authProvider.vendor?.id;
+        if (vendorId != null) {
+          setState(() {
+            _loadingMessage = "Verifying your plan...";
+          });
+
+          // ✅ Wait for plan check to COMPLETE
+          await planProvider.checkVendorPlan(vendorId);
+
+          // ✅ Wait for isChecking to become false
+          while (planProvider.isChecking) {
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
+
+          // Debug: Check what was loaded
+          print(
+              'Final Plan Status - Has Active Plan: ${planProvider.hasActivePlan}');
+          print('Final Plan Status - Is Checking: ${planProvider.isChecking}');
+        }
       }
-    }
 
-    await Future.delayed(const Duration(seconds: 2));
+      // Step 5: Final delay for smooth transition
+      setState(() {
+        _loadingMessage = "Ready!";
+      });
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      print('Error during splash flow: $e');
+      setState(() {
+        _loadingMessage = "Error loading...";
+      });
+      await Future.delayed(const Duration(seconds: 1));
+    }
 
     if (!mounted) return;
 
     setState(() {
       _isLoading = false;
     });
+
+    // Navigate based on login status
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     Navigator.pushReplacement(
       context,
@@ -189,13 +109,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final isDesktop = Responsive.isDesktop(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF4CAF50), // Full green background
+      backgroundColor: const Color(0xFF4CAF50),
       body:
           isDesktop ? _buildWebContent(context) : _buildMobileContent(context),
     );
   }
 
-  // Mobile Content - Centered with full green background
+  // Mobile Content
   Widget _buildMobileContent(BuildContext context) {
     return SafeArea(
       child: Center(
@@ -253,62 +173,41 @@ class _SplashScreenState extends State<SplashScreen> {
 
               const SizedBox(height: 48),
 
-              // Loading indicator
+              // Loading indicator with message
               if (_isLoading) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 20,
+                    vertical: 12,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Row(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
+                    children: [
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2,
+                          strokeWidth: 2.5,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(height: 12),
                       Text(
-                        "Loading...",
-                        style: TextStyle(color: Colors.white, fontSize: 12),
+                        _loadingMessage,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-
-              // const SizedBox(height: 32),
-
-              // // Powered by text at bottom
-              // Column(
-              //   children: [
-              //     Text(
-              //       "Powered by Nemishhrree",
-              //       style: TextStyle(
-              //         fontSize: 12,
-              //         color: Colors.white.withOpacity(0.7),
-              //         letterSpacing: 1.2,
-              //       ),
-              //     ),
-              //     const SizedBox(height: 4),
-              //     Text(
-              //       "Operated by JEIPLX",
-              //       style: TextStyle(
-              //         fontSize: 14,
-              //         fontWeight: FontWeight.w600,
-              //         color: Colors.white.withOpacity(0.9),
-              //       ),
-              //     ),
-              //   ],
-              // ),
             ],
           ),
         ),
@@ -316,13 +215,13 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  // Web Content - Split screen layout
+  // Web Content
   Widget _buildWebContent(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
 
     return Row(
       children: [
-        // Left side - Logo and Branding (50% width)
+        // Left side - Logo and Branding
         Container(
           width: screenSize.width * 0.5,
           height: screenSize.height,
@@ -331,7 +230,6 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo
                 Container(
                   width: 200,
                   height: 200,
@@ -377,7 +275,7 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
 
-        // Right side - Content (50% width)
+        // Right side - Content
         Container(
           width: screenSize.width * 0.5,
           height: screenSize.height,
@@ -389,7 +287,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome message
                   const Text(
                     "Welcome Vendor!",
                     style: TextStyle(
@@ -408,8 +305,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Feature items
                   Row(
                     children: [
                       _buildFeatureItem(icon: Icons.eco, label: "Pure Veg"),
@@ -426,35 +321,34 @@ class _SplashScreenState extends State<SplashScreen> {
                     ],
                   ),
                   const SizedBox(height: 32),
-
-                  // Loading indicator
                   if (_isLoading) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: 24,
+                        vertical: 16,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
+                        children: [
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: 2.5,
                               color: Colors.orange,
                             ),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(height: 12),
                           Text(
-                            "Loading...",
-                            style: TextStyle(
+                            _loadingMessage,
+                            style: const TextStyle(
                               color: Colors.orange,
-                              fontSize: 12,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -462,10 +356,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                     const SizedBox(height: 24),
                   ],
-
-                  const SizedBox(height: 32),
-
-                  // Powered by text
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
