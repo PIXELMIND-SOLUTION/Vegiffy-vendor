@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
+import 'package:vegiffyy_vendor/providers/auth_provider.dart';
 
 class VendorNotificationsScreen extends StatefulWidget {
   final String vendorId;
@@ -15,12 +19,11 @@ class VendorNotificationsScreen extends StatefulWidget {
       _VendorNotificationsScreenState();
 }
 
-class _VendorNotificationsScreenState
-    extends State<VendorNotificationsScreen> {
+class _VendorNotificationsScreenState extends State<VendorNotificationsScreen> {
   bool _loading = true;
   bool _deleteLoading = false;
   List notifications = [];
-  
+
   // Selection mode variables
   bool _isSelectionMode = false;
   Set<int> _selectedIndexes = {}; // Store selected indexes
@@ -61,7 +64,8 @@ class _VendorNotificationsScreenState
 
     try {
       final res = await http.delete(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
+        Uri.parse(
+            'https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -77,7 +81,7 @@ class _VendorNotificationsScreenState
           setState(() {
             notifications.removeWhere((n) => n['_id'] == notificationId);
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Notification deleted successfully'),
@@ -112,7 +116,8 @@ class _VendorNotificationsScreenState
 
     try {
       final res = await http.delete(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
+        Uri.parse(
+            'https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -131,10 +136,11 @@ class _VendorNotificationsScreenState
             _selectedIndexes.clear();
             _isSelectionMode = false;
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${_selectedIds.length} notification(s) deleted successfully'),
+              content: Text(
+                  '${_selectedIds.length} notification(s) deleted successfully'),
               backgroundColor: Colors.green,
             ),
           );
@@ -162,7 +168,8 @@ class _VendorNotificationsScreenState
           borderRadius: BorderRadius.circular(16),
         ),
         title: const Text('Delete Notification'),
-        content: const Text('Are you sure you want to delete this notification?'),
+        content:
+            const Text('Are you sure you want to delete this notification?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -196,7 +203,8 @@ class _VendorNotificationsScreenState
           borderRadius: BorderRadius.circular(16),
         ),
         title: Text('Delete ${_selectedIds.length} Notification(s)?'),
-        content: Text('Are you sure you want to delete ${_selectedIds.length} selected notification(s)?'),
+        content: Text(
+            'Are you sure you want to delete ${_selectedIds.length} selected notification(s)?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -335,212 +343,271 @@ class _VendorNotificationsScreenState
     );
   }
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final nav = context.watch<VendorNavigationProvider>();
+    final vendor = context.watch<AuthProvider>().vendor;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSelectionMode
-            ? Text('${_selectedIndexes.length} selected')
-            : const Text('Notifications'),
-        leading: _isSelectionMode
-            ? IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _exitSelectionMode,
-              )
-            : null,
-        actions: [
-          if (_isSelectionMode) ...[
-            // Select all button
-            IconButton(
-              icon: Icon(
-                _selectedIndexes.length == notifications.length
-                    ? Icons.deselect
-                    : Icons.select_all,
-              ),
-              onPressed: _selectAll,
-              tooltip: _selectedIndexes.length == notifications.length
-                  ? 'Deselect all'
-                  : 'Select all',
-            ),
-            // Delete selected button
-            IconButton(
-              icon: _deleteLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.delete),
-              onPressed: _deleteLoading || _selectedIds.isEmpty
-                  ? null
-                  : _confirmMultipleDelete,
-              tooltip: 'Delete selected',
-            ),
-          ] else if (notifications.isNotEmpty) ...[
-            // Enter selection mode button
-            IconButton(
-              icon: const Icon(Icons.checklist),
-              onPressed: () {
-                setState(() {
-                  _isSelectionMode = true;
-                });
-              },
-              tooltip: 'Select notifications',
-            ),
-          ],
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : notifications.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.notifications_off_rounded,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No notifications available',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: _isSelectionMode
+              ? Text('${_selectedIndexes.length} selected')
+              : const Text('Notifications'),
+          leading: _isSelectionMode
+              ? IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _exitSelectionMode,
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: notifications.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final n = notifications[index];
-                    final isSelected = _selectedIndexes.contains(index);
-                    final notificationId = n['_id'] ?? '';
-
-                    return GestureDetector(
-                      onTap: () => _onNotificationTap(index, notificationId),
-                      onLongPress: () => _onNotificationLongPress(index, notificationId),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          border: isSelected
-                              ? Border.all(
-                                  color: Theme.of(context).primaryColor,
-                                  width: 2,
-                                )
-                              : null,
-                        ),
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          color: isSelected
-                              ? Theme.of(context).primaryColor.withOpacity(0.05)
-                              : null,
-                          child: ListTile(
-                            leading: _isSelectionMode
-                                ? Checkbox(
-                                    value: isSelected,
-                                    onChanged: (_) => _toggleSelection(index, notificationId),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    activeColor: Theme.of(context).primaryColor,
-                                  )
-                                : Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                    ),
-                                    child: Icon(
-                                      Icons.notifications,
-                                      size: 20,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                  ),
-                            title: Text(
-                              n['title'] ?? 'Notification',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                n['message'] ?? '',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _formatDate(n['createdAt']),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                if (!_isSelectionMode) ...[
-                                  const SizedBox(width: 8),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, size: 20),
-                                    onSelected: (value) {
-                                      if (value == 'delete') {
-                                        _confirmSingleDelete(notificationId);
-                                      } else if (value == 'details') {
-                                        _showNotificationDetails(index);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'details',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.info_outline, size: 18),
-                                            SizedBox(width: 8),
-                                            Text('Details'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                            SizedBox(width: 8),
-                                            Text('Delete', style: TextStyle(color: Colors.red)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+              : null,
+          actions: [
+            if (_isSelectionMode) ...[
+              // Select all button
+              IconButton(
+                icon: Icon(
+                  _selectedIndexes.length == notifications.length
+                      ? Icons.deselect
+                      : Icons.select_all,
                 ),
+                onPressed: _selectAll,
+                tooltip: _selectedIndexes.length == notifications.length
+                    ? 'Deselect all'
+                    : 'Select all',
+              ),
+              // Delete selected button
+              IconButton(
+                icon: _deleteLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.delete),
+                onPressed: _deleteLoading || _selectedIds.isEmpty
+                    ? null
+                    : _confirmMultipleDelete,
+                tooltip: 'Delete selected',
+              ),
+            ] else if (notifications.isNotEmpty) ...[
+              // Enter selection mode button
+              IconButton(
+                icon: const Icon(Icons.checklist),
+                onPressed: () {
+                  setState(() {
+                    _isSelectionMode = true;
+                  });
+                },
+                tooltip: 'Select notifications',
+              ),
+            ],
+          ],
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : notifications.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_off_rounded,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No notifications available',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: notifications.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final n = notifications[index];
+                      final isSelected = _selectedIndexes.contains(index);
+                      final notificationId = n['_id'] ?? '';
+
+                      return GestureDetector(
+                        onTap: () => _onNotificationTap(index, notificationId),
+                        onLongPress: () =>
+                            _onNotificationLongPress(index, notificationId),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: isSelected
+                                ? Border.all(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 2,
+                                  )
+                                : null,
+                          ),
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            color: isSelected
+                                ? Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.05)
+                                : null,
+                            child: ListTile(
+                              leading: _isSelectionMode
+                                  ? Checkbox(
+                                      value: isSelected,
+                                      onChanged: (_) => _toggleSelection(
+                                          index, notificationId),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      activeColor:
+                                          Theme.of(context).primaryColor,
+                                    )
+                                  : Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context)
+                                            .primaryColor
+                                            .withOpacity(0.1),
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications,
+                                        size: 20,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                    ),
+                              title: Text(
+                                n['title'] ?? 'Notification',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  n['message'] ?? '',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _formatDate(n['createdAt']),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  if (!_isSelectionMode) ...[
+                                    const SizedBox(width: 8),
+                                    PopupMenuButton<String>(
+                                      icon:
+                                          const Icon(Icons.more_vert, size: 20),
+                                      onSelected: (value) {
+                                        if (value == 'delete') {
+                                          _confirmSingleDelete(notificationId);
+                                        } else if (value == 'details') {
+                                          _showNotificationDetails(index);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        const PopupMenuItem(
+                                          value: 'details',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.info_outline,
+                                                  size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Details'),
+                                            ],
+                                          ),
+                                        ),
+                                        const PopupMenuItem(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.delete_outline,
+                                                  size: 18, color: Colors.red),
+                                              SizedBox(width: 8),
+                                              Text('Delete',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 
   // Helper method to format date
   String _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return '';
-    
+
     try {
       final date = DateTime.parse(dateStr);
       final now = DateTime.now();

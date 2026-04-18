@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
+import 'package:vegiffyy_vendor/providers/auth_provider.dart';
 import 'package:vegiffyy_vendor/services/Wallet/wallet_service.dart';
 
 class MyWalletScreen extends StatefulWidget {
@@ -10,7 +14,7 @@ class MyWalletScreen extends StatefulWidget {
 }
 
 class _MyWalletScreenState extends State<MyWalletScreen> {
-       String? vendorId;
+  String? vendorId;
 
   bool loading = true;
   bool refreshing = false;
@@ -28,32 +32,27 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
   @override
   void initState() {
     super.initState();
-                              _loadVendor();
-
+    _loadVendor();
   }
 
-  
-              void _loadVendor() {
-  final vendor = VendorPreferences.getVendor();
+  void _loadVendor() {
+    final vendor = VendorPreferences.getVendor();
 
-  if (vendor == null) {
-    // Safety fallback (auto logout / redirect)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expired. Please login again")),
-      );
-      Navigator.pop(context);
-    });
-    return;
-  }
+    if (vendor == null) {
+      // Safety fallback (auto logout / redirect)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please login again")),
+        );
+        Navigator.pop(context);
+      });
+      return;
+    }
 
-  vendorId = vendor.id;
+    vendorId = vendor.id;
 
     load();
-
-
-
-}
+  }
 
   Future<void> load() async {
     try {
@@ -96,6 +95,38 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
 
   // ================== UI ==================
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -110,37 +141,54 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
       return const Center(child: Text("No wallet data"));
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Wallet"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: refreshing ? null : () {
-              setState(() => refreshing = true);
-              load();
-            },
-          )
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: wallet!['walletBalance'] <= 0
-            ? null
-            : () => _openWithdrawSheet(),
-        label: const Text("Withdraw"),
-        icon: const Icon(Icons.currency_rupee),
-      ),
-      body: RefreshIndicator(
-        onRefresh: load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _summaryCards(),
-            const SizedBox(height: 16),
-            _transactions(),
-            const SizedBox(height: 16),
-            _withdrawals(),
+    final nav = context.watch<VendorNavigationProvider>();
+    final vendor = context.watch<AuthProvider>().vendor;
+
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("My Wallet"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: refreshing
+                  ? null
+                  : () {
+                      setState(() => refreshing = true);
+                      load();
+                    },
+            )
           ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed:
+              wallet!['walletBalance'] <= 0 ? null : () => _openWithdrawSheet(),
+          label: const Text("Withdraw"),
+          icon: const Icon(Icons.currency_rupee),
+        ),
+        body: RefreshIndicator(
+          onRefresh: load,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _summaryCards(),
+              const SizedBox(height: 16),
+              _transactions(),
+              const SizedBox(height: 16),
+              _withdrawals(),
+            ],
+          ),
         ),
       ),
     );
@@ -151,7 +199,8 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
   Widget _summaryCards() {
     return Column(
       children: [
-        _card("Balance", wallet!['walletBalance'], Icons.account_balance_wallet),
+        _card(
+            "Balance", wallet!['walletBalance'], Icons.account_balance_wallet),
         _card("Total Earnings", wallet!['totalEarnings'], Icons.trending_up),
         _card("Restaurant", wallet!['restaurantName'], Icons.store),
       ],
@@ -226,8 +275,8 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text("Withdraw Funds",
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   TextField(
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -246,8 +295,8 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
                       value: a['_id'],
                       groupValue: selectedAccountId,
                       title: Text(a['bankName']),
-                      subtitle:
-                          Text("****${a['accountNumber'].toString().substring(a['accountNumber'].length - 4)}"),
+                      subtitle: Text(
+                          "****${a['accountNumber'].toString().substring(a['accountNumber'].length - 4)}"),
                       onChanged: (v) {
                         setModal(() => selectedAccountId = v!);
                       },
@@ -282,8 +331,7 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
       return;
     }
 
-    final account =
-        accounts.firstWhere((a) => a['_id'] == selectedAccountId);
+    final account = accounts.firstWhere((a) => a['_id'] == selectedAccountId);
 
     setState(() => withdrawLoading = true);
 
@@ -367,7 +415,6 @@ class _MyWalletScreenState extends State<MyWalletScreen> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 }

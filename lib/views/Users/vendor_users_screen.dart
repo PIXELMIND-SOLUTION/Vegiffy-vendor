@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
 
 class VendorUsersScreen extends StatefulWidget {
   const VendorUsersScreen({super.key});
@@ -12,7 +15,7 @@ class VendorUsersScreen extends StatefulWidget {
 }
 
 class _VendorUsersScreenState extends State<VendorUsersScreen> {
-       String? vendorId;
+  String? vendorId;
 
   final String baseUrl = "https://api.vegiffyy.com/api/vendor";
 
@@ -25,31 +28,27 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
   @override
   void initState() {
     super.initState();
-                          _loadVendor();
-
+    _loadVendor();
   }
 
-              void _loadVendor() {
-  final vendor = VendorPreferences.getVendor();
+  void _loadVendor() {
+    final vendor = VendorPreferences.getVendor();
 
-  if (vendor == null) {
-    // Safety fallback (auto logout / redirect)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expired. Please login again")),
-      );
-      Navigator.pop(context);
-    });
-    return;
-  }
+    if (vendor == null) {
+      // Safety fallback (auto logout / redirect)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please login again")),
+        );
+        Navigator.pop(context);
+      });
+      return;
+    }
 
-  vendorId = vendor.id;
+    vendorId = vendor.id;
 
     fetchUsers();
-
-
-
-}
+  }
 
   /* ================= API ================= */
 
@@ -75,10 +74,9 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
   Map<String, dynamic> formatUser(Map u) {
     return {
       "id": u['_id'],
-      "name":
-          "${u['firstName'] ?? ''} ${u['lastName'] ?? ''}".trim().isEmpty
-              ? "N/A"
-              : "${u['firstName'] ?? ''} ${u['lastName'] ?? ''}".trim(),
+      "name": "${u['firstName'] ?? ''} ${u['lastName'] ?? ''}".trim().isEmpty
+          ? "N/A"
+          : "${u['firstName'] ?? ''} ${u['lastName'] ?? ''}".trim(),
       "email": u['email'] ?? "No email",
       "phone": u['phoneNumber'] ?? "N/A",
       "city": (u['addresses'] != null &&
@@ -106,27 +104,74 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
 
   /* ================= UI ================= */
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text("Restaurant Customers"),
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _header(),
-                  const SizedBox(height: 16),
-                  _searchBar(),
-                  const SizedBox(height: 16),
-                  Expanded(child: _usersList()),
-                ],
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nav = context.watch<VendorNavigationProvider>();
+
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade100,
+        appBar: AppBar(
+          title: const Text("Restaurant Customers"),
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _header(),
+                    const SizedBox(height: 16),
+                    _searchBar(),
+                    const SizedBox(height: 16),
+                    Expanded(child: _usersList()),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 
@@ -148,7 +193,6 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
                 Text("Restaurant Customers",
                     style:
                         TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-  
               ],
             ),
             const Spacer(),
@@ -168,8 +212,7 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
   Widget _searchBar() {
     return TextField(
       decoration: InputDecoration(
-        hintText:
-            "Search by name, email, mobile, city or referral code...",
+        hintText: "Search by name, email, mobile, city or referral code...",
         prefixIcon: const Icon(Icons.search),
         filled: true,
         fillColor: Colors.white,
@@ -185,8 +228,7 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
   Widget _usersList() {
     if (filteredUsers.isEmpty) {
       return const Center(
-        child: Text("No customers found",
-            style: TextStyle(color: Colors.grey)),
+        child: Text("No customers found", style: TextStyle(color: Colors.grey)),
       );
     }
 
@@ -216,8 +258,7 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
                     const SizedBox(width: 4),
                     Text(u['phone']),
                     const SizedBox(width: 12),
-                    const Icon(Icons.location_on,
-                        size: 14, color: Colors.grey),
+                    const Icon(Icons.location_on, size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(u['city']),
                   ],
@@ -257,8 +298,7 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(status,
-          style: TextStyle(color: fg, fontSize: 12)),
+      child: Text(status, style: TextStyle(color: fg, fontSize: 12)),
     );
   }
 
@@ -270,8 +310,7 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -321,8 +360,8 @@ class _VendorUsersScreenState extends State<VendorUsersScreen> {
     return ListTile(
       dense: true,
       leading: Icon(icon, size: 20),
-      title: Text(label,
-          style: const TextStyle(fontSize: 13, color: Colors.grey)),
+      title:
+          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
       subtitle:
           Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
     );

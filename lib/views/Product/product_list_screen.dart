@@ -1,4 +1,3 @@
-
 // import 'package:flutter/material.dart';
 // import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
 // import 'package:vegiffyy_vendor/models/Product/product_model.dart';
@@ -16,7 +15,6 @@
 //   List<ProductModel> products = [];
 //   bool loading = true;
 //        String? vendorId;
-
 
 //   @override
 //   void initState() {
@@ -42,8 +40,6 @@
 //   vendorId = vendor.id;
 
 //     load();
-
-
 
 // }
 
@@ -249,29 +245,13 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
 import 'package:vegiffyy_vendor/models/Product/product_model.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
+import 'package:vegiffyy_vendor/providers/auth_provider.dart';
 import 'package:vegiffyy_vendor/views/Product/product_view_screen.dart';
 import '../../services/Product/product_service.dart';
 
@@ -315,8 +295,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
       filteredProducts = List.from(products);
     } else {
       filteredProducts = products.where((product) {
-        final name = (product.recommendedItem['name'] ?? '').toString().toLowerCase();
-        final price = (product.recommendedItem['price'] ?? '').toString().toLowerCase();
+        final name =
+            (product.recommendedItem['name'] ?? '').toString().toLowerCase();
+        final price =
+            (product.recommendedItem['price'] ?? '').toString().toLowerCase();
         final query = _searchQuery.trim().toLowerCase();
         return name.contains(query) || price.contains(query);
       }).toList();
@@ -370,113 +352,160 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
   }
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      body: Column(
-        children: [
-          // Header Section with Search
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title and Product Count
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "My Products",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+    final nav = context.watch<VendorNavigationProvider>();
+    final vendor = context.watch<AuthProvider>().vendor;
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: Column(
+          children: [
+            // Header Section with Search
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title and Product Count
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "My Products",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                        if (!loading)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              "${filteredProducts.length} items",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green.shade700,
+                          if (!loading)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "${filteredProducts.length} items",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green.shade700,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Search Bar
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
+                        ],
                       ),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: "Search products...",
-                          hintStyle: TextStyle(color: Colors.grey.shade500),
-                          prefixIcon: Icon(
-                            Icons.search,
-                            color: Colors.grey.shade600,
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                      const SizedBox(height: 16),
+
+                      // Search Bar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: "Search products...",
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: Colors.grey.shade600,
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                    },
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Content Area
-          Expanded(
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildContent(),
-          ),
-        ],
+            // Content Area
+            Expanded(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildContent(),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,7 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
+import 'package:vegiffyy_vendor/providers/Profile/vendor_provider.dart';
 
 class CommissionReportScreen extends StatefulWidget {
   const CommissionReportScreen({super.key});
@@ -83,7 +87,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
         final data = jsonDecode(res.body);
         if (data['success'] == true && data['data'] != null) {
           setState(() {
-            restaurantCommission = (data['data']['commission'] ?? 20).toDouble();
+            restaurantCommission =
+                (data['data']['commission'] ?? 20).toDouble();
           });
           debugPrint("✅ Restaurant commission loaded: $restaurantCommission%");
         }
@@ -114,7 +119,7 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
 
       if (body['success'] == true) {
         final allOrders = List<Map<String, dynamic>>.from(body['data']);
-        
+
         // Filter only delivered orders
         final delivered = allOrders.where((o) {
           final status = o['orderStatus']?.toString().toLowerCase() ?? '';
@@ -124,21 +129,24 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
         // Process orders with all tax calculations
         orders = delivered.map<Map<String, dynamic>>((order) {
           final subTotal = (order['subTotal'] ?? 0).toDouble();
-          
+
           // Step 1: Commission to Vegiffy
           final commissionAmount = (subTotal * restaurantCommission) / 100;
-          
+
           // Step 2: GST on commission
           final gstOnCommission = (commissionAmount * GST_RATE) / 100;
-          
+
           // Step 3: Vendor's gross earning (subtotal - commission)
           final vendorGrossEarning = subTotal - commissionAmount;
-          
+
           // Step 4: TDS on vendor earning
           final tdsOnVendorEarning = (vendorGrossEarning * TDS_RATE) / 100;
-          
+
           // Step 5: Net payable = subtotal - commission - GST - TDS
-          final netPayable = subTotal - commissionAmount - gstOnCommission - tdsOnVendorEarning;
+          final netPayable = subTotal -
+              commissionAmount -
+              gstOnCommission -
+              tdsOnVendorEarning;
 
           final orderDate = DateTime.parse(order['createdAt']);
 
@@ -147,28 +155,33 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
             "date": orderDate,
             "dateTime": DateFormat('dd MMM yyyy, hh:mm a').format(orderDate),
             "dateOnly": DateFormat('yyyy-MM-dd').format(orderDate),
-            "customerName": "${order['userId']?['firstName'] ?? ''} ${order['userId']?['lastName'] ?? ''}".trim(),
+            "customerName":
+                "${order['userId']?['firstName'] ?? ''} ${order['userId']?['lastName'] ?? ''}"
+                    .trim(),
             "customerPhone": order['userId']?['phoneNumber'] ?? "N/A",
             "restaurantName": order['restaurantId']?['restaurantName'] ?? "N/A",
-            
+
             // Order amounts
             "subTotal": double.parse(subTotal.toStringAsFixed(2)),
             "deliveryCharge": (order['deliveryCharge'] ?? 0).toDouble(),
             "couponDiscount": (order['couponDiscount'] ?? 0).toDouble(),
             "totalPayable": (order['totalPayable'] ?? 0).toDouble(),
-            
+
             // Commission calculations
             "commissionPercent": restaurantCommission,
-            "commissionAmount": double.parse(commissionAmount.toStringAsFixed(2)),
-            
+            "commissionAmount":
+                double.parse(commissionAmount.toStringAsFixed(2)),
+
             // Vendor calculations
-            "vendorGrossEarning": double.parse(vendorGrossEarning.toStringAsFixed(2)),
-            
+            "vendorGrossEarning":
+                double.parse(vendorGrossEarning.toStringAsFixed(2)),
+
             // Tax calculations
             "gstOnCommission": double.parse(gstOnCommission.toStringAsFixed(2)),
-            "tdsOnVendorEarning": double.parse(tdsOnVendorEarning.toStringAsFixed(2)),
+            "tdsOnVendorEarning":
+                double.parse(tdsOnVendorEarning.toStringAsFixed(2)),
             "netPayable": double.parse(netPayable.toStringAsFixed(2)),
-            
+
             // Payment info
             "paymentMethod": order['paymentMethod'] ?? "N/A",
             "paymentStatus": order['paymentStatus'] ?? "N/A",
@@ -214,26 +227,27 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
   void calculateSummary() {
     final totalOrders = filteredOrders.length;
 
-    final totalSubtotal = filteredOrders.fold<double>(
-        0, (s, o) => s + o['subTotal']);
+    final totalSubtotal =
+        filteredOrders.fold<double>(0, (s, o) => s + o['subTotal']);
 
-    final totalCommission = filteredOrders.fold<double>(
-        0, (s, o) => s + o['commissionAmount']);
+    final totalCommission =
+        filteredOrders.fold<double>(0, (s, o) => s + o['commissionAmount']);
 
-    final totalVendorGross = filteredOrders.fold<double>(
-        0, (s, o) => s + o['vendorGrossEarning']);
+    final totalVendorGross =
+        filteredOrders.fold<double>(0, (s, o) => s + o['vendorGrossEarning']);
 
-    final totalGST = filteredOrders.fold<double>(
-        0, (s, o) => s + o['gstOnCommission']);
+    final totalGST =
+        filteredOrders.fold<double>(0, (s, o) => s + o['gstOnCommission']);
 
-    final totalTDS = filteredOrders.fold<double>(
-        0, (s, o) => s + o['tdsOnVendorEarning']);
+    final totalTDS =
+        filteredOrders.fold<double>(0, (s, o) => s + o['tdsOnVendorEarning']);
 
-    final totalNetPayable = filteredOrders.fold<double>(
-        0, (s, o) => s + o['netPayable']);
+    final totalNetPayable =
+        filteredOrders.fold<double>(0, (s, o) => s + o['netPayable']);
 
     final avgCommissionPercent = totalSubtotal > 0
-        ? double.parse(((totalCommission / totalSubtotal) * 100).toStringAsFixed(2))
+        ? double.parse(
+            ((totalCommission / totalSubtotal) * 100).toStringAsFixed(2))
         : 0.0;
 
     setState(() {
@@ -285,74 +299,125 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
 
   /* ================= UI ================= */
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          "Commission & Tax Report",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        elevation: 0,
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          // Export options (can be implemented later)
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: filteredOrders.isEmpty ? null : () => _showExportOptions(),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
           ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                      const SizedBox(height: 16),
-                      Text(
-                        error!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: fetchOrders,
-                        child: const Text("Retry"),
-                      ),
-                    ],
+    );
+
+    return shouldExit ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<VendorProvider>();
+    final vendor = provider.vendor;
+    final nav = context.watch<VendorNavigationProvider>();
+
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          title: const Text(
+            "Commission & Tax Report",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          actions: [
+            // Export options (can be implemented later)
+            IconButton(
+              icon: const Icon(Icons.download),
+              onPressed:
+                  filteredOrders.isEmpty ? null : () => _showExportOptions(),
+            ),
+          ],
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline,
+                            size: 48, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: fetchOrders,
+                          child: const Text("Retry"),
+                        ),
+                      ],
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: fetchOrders,
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // Tax Rates Banner
+                        _taxRatesBanner(),
+                        const SizedBox(height: 16),
+
+                        // Summary Cards Grid
+                        _summaryCards(),
+                        const SizedBox(height: 16),
+
+                        // Filters Section
+                        _filtersSection(),
+                        const SizedBox(height: 16),
+
+                        // Results Count
+                        _resultsCount(),
+                        const SizedBox(height: 12),
+
+                        // Orders Table/List
+                        _ordersList(),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                )
-              : RefreshIndicator(
-                  onRefresh: fetchOrders,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      // Tax Rates Banner
-                      _taxRatesBanner(),
-                      const SizedBox(height: 16),
-
-                      // Summary Cards Grid
-                      _summaryCards(),
-                      const SizedBox(height: 16),
-
-                      // Filters Section
-                      _filtersSection(),
-                      const SizedBox(height: 16),
-
-                      // Results Count
-                      _resultsCount(),
-                      const SizedBox(height: 12),
-
-                      // Orders Table/List
-                      _ordersList(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+      ),
     );
   }
 
@@ -574,7 +639,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
               onChanged: (v) {
                 search = v;
@@ -601,14 +667,16 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                          Icon(Icons.calendar_today,
+                              size: 16, color: Colors.grey[600]),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -616,7 +684,9 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                                   ? DateFormat('dd/MM/yyyy').format(startDate!)
                                   : "Start Date",
                               style: TextStyle(
-                                color: startDate != null ? Colors.black : Colors.grey[500],
+                                color: startDate != null
+                                    ? Colors.black
+                                    : Colors.grey[500],
                               ),
                             ),
                           ),
@@ -641,14 +711,16 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                          Icon(Icons.calendar_today,
+                              size: 16, color: Colors.grey[600]),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -656,7 +728,9 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                                   ? DateFormat('dd/MM/yyyy').format(endDate!)
                                   : "End Date",
                               style: TextStyle(
-                                color: endDate != null ? Colors.black : Colors.grey[500],
+                                color: endDate != null
+                                    ? Colors.black
+                                    : Colors.grey[500],
                               ),
                             ),
                           ),
@@ -697,7 +771,9 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                     child: const Text("This Month"),
                   ),
                 ),
-                if (startDate != null || endDate != null || search.isNotEmpty) ...[
+                if (startDate != null ||
+                    endDate != null ||
+                    search.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: clearFilters,
@@ -819,7 +895,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -931,7 +1008,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                     label: const Text("View Full Calculation"),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                     ),
                   ),
                 ],
@@ -1045,7 +1123,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                             _infoRow("Customer", order['customerName']),
                             _infoRow("Phone", order['customerPhone']),
                             _infoRow("Restaurant", order['restaurantName']),
-                            _infoRow("Payment", "${order['paymentMethod']} • ${order['paymentStatus']}"),
+                            _infoRow("Payment",
+                                "${order['paymentMethod']} • ${order['paymentStatus']}"),
                           ],
                         ),
                       ),
@@ -1057,8 +1136,11 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         title: "Base Amount",
                         color: Colors.grey,
                         children: [
-                          _calcRow("Subtotal", formatCurrency(order['subTotal']), isBold: true),
-                          _noteText("This is the ONLY amount used for all calculations"),
+                          _calcRow(
+                              "Subtotal", formatCurrency(order['subTotal']),
+                              isBold: true),
+                          _noteText(
+                              "This is the ONLY amount used for all calculations"),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -1069,8 +1151,10 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         title: "Commission to Vegiffy",
                         color: Colors.red,
                         children: [
-                          _calcRow("Commission Rate", "$restaurantCommission% of subtotal"),
-                          _calcRow("Calculation", "₹${order['subTotal']} × $restaurantCommission%"),
+                          _calcRow("Commission Rate",
+                              "$restaurantCommission% of subtotal"),
+                          _calcRow("Calculation",
+                              "₹${order['subTotal']} × $restaurantCommission%"),
                           _calcRow(
                             "Commission Amount",
                             formatCurrency(order['commissionAmount']),
@@ -1088,7 +1172,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         color: Colors.blue,
                         children: [
                           _calcRow("GST Rate", "$GST_RATE% of commission"),
-                          _calcRow("Calculation", "₹${order['commissionAmount']} × $GST_RATE%"),
+                          _calcRow("Calculation",
+                              "₹${order['commissionAmount']} × $GST_RATE%"),
                           _calcRow(
                             "GST Amount",
                             formatCurrency(order['gstOnCommission']),
@@ -1105,8 +1190,11 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         title: "Vendor Gross Earning",
                         color: Colors.purple,
                         children: [
-                          _calcRow("Subtotal", formatCurrency(order['subTotal'])),
-                          _calcRow("Less: Commission", "-${formatCurrency(order['commissionAmount'])}", valueColor: Colors.red),
+                          _calcRow(
+                              "Subtotal", formatCurrency(order['subTotal'])),
+                          _calcRow("Less: Commission",
+                              "-${formatCurrency(order['commissionAmount'])}",
+                              valueColor: Colors.red),
                           _calcRow(
                             "Gross Earning",
                             formatCurrency(order['vendorGrossEarning']),
@@ -1124,7 +1212,8 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         color: Colors.orange,
                         children: [
                           _calcRow("TDS Rate", "$TDS_RATE% of vendor gross"),
-                          _calcRow("Calculation", "₹${order['vendorGrossEarning']} × $TDS_RATE%"),
+                          _calcRow("Calculation",
+                              "₹${order['vendorGrossEarning']} × $TDS_RATE%"),
                           _calcRow(
                             "TDS Amount",
                             "-${formatCurrency(order['tdsOnVendorEarning'])}",
@@ -1140,12 +1229,16 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.green.shade50, Colors.green.shade100],
+                            colors: [
+                              Colors.green.shade50,
+                              Colors.green.shade100
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.green.shade400, width: 2),
+                          border: Border.all(
+                              color: Colors.green.shade400, width: 2),
                         ),
                         child: Column(
                           children: [
@@ -1158,10 +1251,17 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            _calcRow("Subtotal", formatCurrency(order['subTotal'])),
-                            _calcRow("Less: Commission", "-${formatCurrency(order['commissionAmount'])}", valueColor: Colors.red),
-                            _calcRow("Less: GST", "-${formatCurrency(order['gstOnCommission'])}", valueColor: Colors.blue),
-                            _calcRow("Less: TDS", "-${formatCurrency(order['tdsOnVendorEarning'])}", valueColor: Colors.orange),
+                            _calcRow(
+                                "Subtotal", formatCurrency(order['subTotal'])),
+                            _calcRow("Less: Commission",
+                                "-${formatCurrency(order['commissionAmount'])}",
+                                valueColor: Colors.red),
+                            _calcRow("Less: GST",
+                                "-${formatCurrency(order['gstOnCommission'])}",
+                                valueColor: Colors.blue),
+                            _calcRow("Less: TDS",
+                                "-${formatCurrency(order['tdsOnVendorEarning'])}",
+                                valueColor: Colors.orange),
                             const Divider(height: 24, thickness: 1),
                             _calcRow(
                               "NET PAYABLE",
@@ -1192,10 +1292,18 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            _calcRow("Subtotal", formatCurrency(order['subTotal']), isBold: true),
-                            _calcRow("Vegiffy Commission", "-${formatCurrency(order['commissionAmount'])}", valueColor: Colors.red),
-                            _calcRow("GST to Govt", "-${formatCurrency(order['gstOnCommission'])}", valueColor: Colors.blue),
-                            _calcRow("TDS to Govt", "-${formatCurrency(order['tdsOnVendorEarning'])}", valueColor: Colors.orange),
+                            _calcRow(
+                                "Subtotal", formatCurrency(order['subTotal']),
+                                isBold: true),
+                            _calcRow("Vegiffy Commission",
+                                "-${formatCurrency(order['commissionAmount'])}",
+                                valueColor: Colors.red),
+                            _calcRow("GST to Govt",
+                                "-${formatCurrency(order['gstOnCommission'])}",
+                                valueColor: Colors.blue),
+                            _calcRow("TDS to Govt",
+                                "-${formatCurrency(order['tdsOnVendorEarning'])}",
+                                valueColor: Colors.orange),
                             const Divider(height: 20),
                             _calcRow(
                               "You Receive",
@@ -1269,7 +1377,9 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
     );
   }
 
-  Widget _calcRow(String label, String value, {
+  Widget _calcRow(
+    String label,
+    String value, {
     bool isBold = false,
     Color? valueColor,
     double fontSize = 14,
@@ -1341,7 +1451,7 @@ class _CommissionReportScreenState extends State<CommissionReportScreen> {
           color: Colors.grey.shade500,
         ),
       ),
-     );
+    );
   }
 
   void _showExportOptions() {

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:vegiffyy_vendor/views/widgets/global_back_control.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
@@ -95,6 +97,37 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     super.dispose();
   }
 
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              SystemNavigator.pop(); // ACTUALLY EXIT THE APP
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -106,84 +139,91 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       vertical: isMobile ? 12 : 20,
     );
 
-    return Container(
-      color: theme.colorScheme.surfaceVariant.withOpacity(0.05),
-      child: Consumer<DashboardProvider>(
-        builder: (context, dash, _) {
-          if (dash.isLoading && dash.stats == null) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: theme.colorScheme.primary,
-              ),
-            );
-          }
-
-          if (dash.status == DashboardStatus.error && dash.stats == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  dash.errorMessage ?? 'Failed to load dashboard',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+    return GlobalBackControl(
+      onBackPressed: () {
+        // Optional: Add custom back behavior
+        // For example, show confirmation dialog before exiting
+        _showExitConfirmation();
+      },
+      child: Container(
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.05),
+        child: Consumer<DashboardProvider>(
+          builder: (context, dash, _) {
+            if (dash.isLoading && dash.stats == null) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary,
                 ),
-              ),
-            );
-          }
+              );
+            }
 
-          return Stack(
-            children: [
-              RefreshIndicator(
-                onRefresh: () async {
-                  // Reload all dashboard data
-                  if (_vendorId != null) {
-                    await _dash?.loadAll(_vendorId!);
-                    // Also reload pending orders
-                    await _dash?.loadPendingOrders(_vendorId!);
-                  }
-                },
-                color: theme.colorScheme.primary,
-                backgroundColor: Colors.white,
-                strokeWidth: 2,
-                child: SingleChildScrollView(
-                  controller: _scrollController, // ✅ ATTACHED
-                  padding: padding,
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints:
-                          BoxConstraints(maxWidth: isDesktop ? 1200 : 900),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _HeaderBar(dash: dash),
-                          const SizedBox(height: 16),
-                          _StatsGrid(stats: dash.stats, dash: dash),
-                          const SizedBox(height: 24),
-                          _ChartsRow(dash: dash),
-                          const SizedBox(height: 24),
-                          _BottomSection(dash: dash),
-                          const SizedBox(height: 24),
-                          _QuickOverview(dash: dash),
-                          const SizedBox(height: 24),
-                        ],
+            if (dash.status == DashboardStatus.error && dash.stats == null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    dash.errorMessage ?? 'Failed to load dashboard',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                RefreshIndicator(
+                  onRefresh: () async {
+                    // Reload all dashboard data
+                    if (_vendorId != null) {
+                      await _dash?.loadAll(_vendorId!);
+                      // Also reload pending orders
+                      await _dash?.loadPendingOrders(_vendorId!);
+                    }
+                  },
+                  color: theme.colorScheme.primary,
+                  backgroundColor: Colors.white,
+                  strokeWidth: 2,
+                  child: SingleChildScrollView(
+                    controller: _scrollController, // ✅ ATTACHED
+                    padding: padding,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(maxWidth: isDesktop ? 1200 : 900),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _HeaderBar(dash: dash),
+                            const SizedBox(height: 16),
+                            _StatsGrid(stats: dash.stats, dash: dash),
+                            const SizedBox(height: 24),
+                            _ChartsRow(dash: dash),
+                            const SizedBox(height: 24),
+                            _BottomSection(dash: dash),
+                            const SizedBox(height: 24),
+                            _QuickOverview(dash: dash),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (dash.showBuffer &&
-                  dash.currentBufferOrder != null &&
-                  _vendorId != null)
-                _BufferModalOverlay(
-                  dash: dash,
-                  vendorId: _vendorId!,
-                ),
-            ],
-          );
-        },
+                if (dash.showBuffer &&
+                    dash.currentBufferOrder != null &&
+                    _vendorId != null)
+                  _BufferModalOverlay(
+                    dash: dash,
+                    vendorId: _vendorId!,
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

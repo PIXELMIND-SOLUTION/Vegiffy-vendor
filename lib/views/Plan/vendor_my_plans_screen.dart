@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
+import 'package:vegiffyy_vendor/providers/auth_provider.dart';
 
 class VendorMyPlansScreen extends StatefulWidget {
   const VendorMyPlansScreen({super.key});
@@ -11,7 +15,7 @@ class VendorMyPlansScreen extends StatefulWidget {
 }
 
 class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
-     String? vendorId;
+  String? vendorId;
 
   final String baseUrl = "https://api.vegiffyy.com/api/vendor";
 
@@ -24,40 +28,33 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
   @override
   void initState() {
     super.initState();
-                  _loadVendor();
-
+    _loadVendor();
   }
 
+  void _loadVendor() {
+    final vendor = VendorPreferences.getVendor();
 
-          void _loadVendor() {
-  final vendor = VendorPreferences.getVendor();
+    if (vendor == null) {
+      // Safety fallback (auto logout / redirect)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please login again")),
+        );
+        Navigator.pop(context);
+      });
+      return;
+    }
 
-  if (vendor == null) {
-    // Safety fallback (auto logout / redirect)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expired. Please login again")),
-      );
-      Navigator.pop(context);
-    });
-    return;
-  }
-
-  vendorId = vendor.id;
+    vendorId = vendor.id;
 
     fetchMyPlans();
-
-
-
-}
-
+  }
 
   /* ===================== API ===================== */
 
   Future<void> fetchMyPlans() async {
     try {
-      final res =
-          await http.get(Uri.parse("$baseUrl/myplan/$vendorId"));
+      final res = await http.get(Uri.parse("$baseUrl/myplan/$vendorId"));
 
       final body = jsonDecode(res.body);
       print("pppppppppppppppppppppppppppppp${res.body}");
@@ -107,15 +104,62 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
 
   /* ===================== UI ===================== */
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("My Vendor Plans")),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : plans.isEmpty
-              ? _noPlans()
-              : _plansGrid(),
+    final nav = context.watch<VendorNavigationProvider>();
+    final vendor = context.watch<AuthProvider>().vendor;
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text("My Vendor Plans")),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : plans.isEmpty
+                ? _noPlans()
+                : _plansGrid(),
+      ),
     );
   }
 
@@ -124,8 +168,7 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.card_membership,
-              size: 60, color: Colors.grey),
+          const Icon(Icons.card_membership, size: 60, color: Colors.grey),
           const SizedBox(height: 12),
           const Text(
             "No Plans Found",
@@ -215,19 +258,15 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _infoRow("Base Amount", "₹${plan['baseAmount']}"),
-                _infoRow("Purchase Date",
-                    _formatDate(plan['purchaseDate'])),
-                _infoRow(
-                    "Expiry Date", _formatDate(plan['expiryDate'])),
+                _infoRow("Purchase Date", _formatDate(plan['purchaseDate'])),
+                _infoRow("Expiry Date", _formatDate(plan['expiryDate'])),
                 const SizedBox(height: 12),
                 const Text("Benefits",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 ...plan['benefits'].map<Widget>((b) => Row(
                       children: [
-                        const Icon(Icons.check,
-                            size: 16, color: Colors.green),
+                        const Icon(Icons.check, size: 16, color: Colors.green),
                         const SizedBox(width: 6),
                         Text(b),
                       ],
@@ -260,8 +299,7 @@ class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: const TextStyle(color: Colors.grey)),
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
     );

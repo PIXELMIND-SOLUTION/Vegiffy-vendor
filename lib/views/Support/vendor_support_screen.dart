@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
 
 class VendorSupportScreen extends StatefulWidget {
   const VendorSupportScreen({super.key});
@@ -21,15 +24,15 @@ class _VendorSupportScreenState extends State<VendorSupportScreen> {
   void copyEmail() {
     Clipboard.setData(ClipboardData(text: email));
     setState(() => copiedEmail = true);
-    Future.delayed(const Duration(seconds: 2),
-        () => setState(() => copiedEmail = false));
+    Future.delayed(
+        const Duration(seconds: 2), () => setState(() => copiedEmail = false));
   }
 
   void copyPhone() {
     Clipboard.setData(ClipboardData(text: phone));
     setState(() => copiedPhone = true);
-    Future.delayed(const Duration(seconds: 2),
-        () => setState(() => copiedPhone = false));
+    Future.delayed(
+        const Duration(seconds: 2), () => setState(() => copiedPhone = false));
   }
 
   Future<void> sendEmail() async {
@@ -43,35 +46,81 @@ class _VendorSupportScreenState extends State<VendorSupportScreen> {
   }
 
   Future<void> openWhatsApp() async {
-    final msg = Uri.encodeComponent(
-        "Hello Vegiffyy Vendor Support Team,");
+    final msg = Uri.encodeComponent("Hello Vegiffyy Vendor Support Team,");
     final uri = Uri.parse("https://wa.me/$phone?text=$msg");
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   /* ================= UI ================= */
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE8F5E9), Color(0xFFD1FAE5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final nav = context.watch<VendorNavigationProvider>();
+
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFE8F5E9), Color(0xFFD1FAE5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _mainCard(),
-                const SizedBox(height: 16),
-                _quickTips(),
-              ],
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _mainCard(),
+                  const SizedBox(height: 16),
+                  _quickTips(),
+                ],
+              ),
             ),
           ),
         ),
@@ -269,10 +318,10 @@ class _VendorSupportScreenState extends State<VendorSupportScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(title,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   Text(subtitle,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.grey)),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ],

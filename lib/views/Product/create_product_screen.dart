@@ -1,12 +1,13 @@
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
 import 'package:vegiffyy_vendor/models/Category/category_model.dart';
+import 'package:vegiffyy_vendor/navigation/vendor_navigation_provider.dart';
 import 'package:vegiffyy_vendor/navigation/vendor_section.dart';
 import 'package:vegiffyy_vendor/providers/Category/category_provider.dart';
+import 'package:vegiffyy_vendor/providers/auth_provider.dart';
 import 'package:vegiffyy_vendor/services/Product/product_service.dart';
 import 'package:vegiffyy_vendor/views/Product/product_list_screen.dart';
 import 'package:vegiffyy_vendor/views/dashboard/vendor_main_screen.dart';
@@ -19,7 +20,7 @@ class CreateProductScreen extends StatefulWidget {
 }
 
 class _CreateProductScreenState extends State<CreateProductScreen> {
-     String? vendorId;
+  String? vendorId;
   final List<_ProductForm> products = [];
   bool loading = false;
 
@@ -29,30 +30,25 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CategoryProvider>().load();
     });
-                      _loadVendor();
-
+    _loadVendor();
   }
 
-            void _loadVendor() {
-  final vendor = VendorPreferences.getVendor();
+  void _loadVendor() {
+    final vendor = VendorPreferences.getVendor();
 
-  if (vendor == null) {
-    // Safety fallback (auto logout / redirect)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expired. Please login again")),
-      );
-      Navigator.pop(context);
-    });
-    return;
+    if (vendor == null) {
+      // Safety fallback (auto logout / redirect)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Session expired. Please login again")),
+        );
+        Navigator.pop(context);
+      });
+      return;
+    }
+
+    vendorId = vendor.id;
   }
-
-  vendorId = vendor.id;
-
-
-
-
-}
 
   void _addProduct() {
     setState(() => products.add(_ProductForm()));
@@ -71,7 +67,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
     final file = File(picked.path);
     final fileSize = await file.length();
-    
+
     if (fileSize > 5 * 1024 * 1024) {
       _showSnackBar("Image must be less than 5MB", isError: true);
       return;
@@ -105,17 +101,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       );
 
       if (!mounted) return;
-      
+
       _showSnackBar("Products created successfully!", isSuccess: true);
-Navigator.pushAndRemoveUntil(
-  context,
-  MaterialPageRoute(
-    builder: (_) => const VendorMainScreen(
-      initialSection: VendorSection.allProducts,
-    ),
-  ),
-  (route) => false,
-);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const VendorMainScreen(
+            initialSection: VendorSection.allProducts,
+          ),
+        ),
+        (route) => false,
+      );
     } catch (e) {
       _showSnackBar("Error: ${e.toString()}", isError: true);
     } finally {
@@ -125,7 +121,8 @@ Navigator.pushAndRemoveUntil(
     }
   }
 
-  void _showSnackBar(String message, {bool isSuccess = false, bool isError = false}) {
+  void _showSnackBar(String message,
+      {bool isSuccess = false, bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -138,196 +135,244 @@ Navigator.pushAndRemoveUntil(
     );
   }
 
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final categoryProvider = context.watch<CategoryProvider>();
+    final nav = context.watch<VendorNavigationProvider>();
+    final vendor = context.watch<AuthProvider>().vendor;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Create Products"),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                // Vendor Info Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
+    return WillPopScope(
+      onWillPop: () async {
+        // If we're not on dashboard, go to dashboard instead of closing app
+        if (nav.current != VendorSection.dashboard) {
+          context
+              .read<VendorNavigationProvider>()
+              .setSection(VendorSection.dashboard);
+          return false; // Don't pop, we handled it
+        }
+        // If already on dashboard, show exit confirmation
+        return _showExitConfirmationDialog();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Create Products"),
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  // Vendor Info Card
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.store_outlined,
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.store_outlined,
-                            color: theme.colorScheme.primary,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Vendor ID",
+                                  style: theme.textTheme.labelSmall,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  vendorId.toString(),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Add Product Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Products",
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          Text(
+                            "${products.length} product${products.length != 1 ? 's' : ''} added",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: _addProduct,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text("Add Product"),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Empty State
+                  if (products.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 20),
+                      padding: const EdgeInsets.all(40),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withOpacity(0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 64,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No Products Yet",
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Tap 'Add Product' to get started",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Product Cards
+                  ...products.asMap().entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _ProductCard(
+                        index: entry.key,
+                        product: entry.value,
+                        categories: categoryProvider.categories,
+                        onDelete: () => _removeProduct(entry.key),
+                        onImagePick: () => _pickImage(entry.key),
+                        onUpdate: () => setState(() {}),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+
+            // Submit Button
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : _submit,
+                    child: loading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.check_circle_outline, size: 20),
+                              const SizedBox(width: 8),
                               Text(
-                                "Vendor ID",
-                                style: theme.textTheme.labelSmall,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                vendorId.toString(),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w500,
+                                "Create ${products.length} Product${products.length != 1 ? 's' : ''}",
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: Colors.black,
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Add Product Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Products",
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        Text(
-                          "${products.length} product${products.length != 1 ? 's' : ''} added",
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _addProduct,
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text("Add Product"),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Empty State
-                if (products.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    padding: const EdgeInsets.all(40),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.inventory_2_outlined,
-                          size: 64,
-                          color: theme.colorScheme.outline,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No Products Yet",
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Tap 'Add Product' to get started",
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Product Cards
-                ...products.asMap().entries.map((entry) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _ProductCard(
-                      index: entry.key,
-                      product: entry.value,
-                      categories: categoryProvider.categories,
-                      onDelete: () => _removeProduct(entry.key),
-                      onImagePick: () => _pickImage(entry.key),
-                      onUpdate: () => setState(() {}),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          // Submit Button
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: loading ? null : _submit,
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.check_circle_outline, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Create ${products.length} Product${products.length != 1 ? 's' : ''}",
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: Colors.black,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -552,7 +597,7 @@ class _ProductCard extends StatelessWidget {
               style: theme.textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
-            
+
             GestureDetector(
               onTap: onImagePick,
               child: Container(

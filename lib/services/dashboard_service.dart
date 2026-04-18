@@ -74,13 +74,11 @@ class DashboardService {
 
     final jsonBody = json.decode(res.body) as Map<String, dynamic>;
     final bool success = jsonBody['success'] == true;
-    final String message = jsonBody['message'] ??
-        (success ? 'Order successfully accept' : 'Failed to update order');
+    final String message =
+        jsonBody['message'] ?? (success ? '' : 'Failed to update order');
 
-    if (success) {
+    if (!success) {
       ToastService.showSuccess(message);
-    } else {
-      ToastService.showError(message);
     }
 
     if (jsonBody['success'] != true) {

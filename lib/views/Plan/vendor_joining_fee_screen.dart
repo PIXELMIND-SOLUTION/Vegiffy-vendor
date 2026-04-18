@@ -39,7 +39,6 @@
 //     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onSuccess);
 //     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onError);
 
-
 //   }
 
 //   @override
@@ -47,7 +46,6 @@
 //     _razorpay.clear();
 //     super.dispose();
 //   }
-
 
 //         void _loadVendor() {
 //   final vendor = VendorPreferences.getVendor();
@@ -67,7 +65,6 @@
 
 //          fetchVendor();
 //     fetchPlans();
-
 
 // }
 
@@ -323,31 +320,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -355,6 +327,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:vegiffyy_vendor/helper/vendor_storage_helper.dart';
 import 'package:path/path.dart' as path;
+import 'package:vegiffyy_vendor/views/dashboard/vendor_main_screen.dart';
 import 'vendor_joining_success_screen.dart';
 
 class VendorJoiningFeeScreen extends StatefulWidget {
@@ -401,7 +374,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
   // WhatsApp contact for vendors
   final Map<String, String> whatsappContact = {
     "number": "9391973675",
-    "message": "Hi, I have made payment for Vegiffy Vendor Program. Here is my payment screenshot:"
+    "message":
+        "Hi, I have made payment for Vegiffy Vendor Program. Here is my payment screenshot:"
   };
 
   final ImagePicker _imagePicker = ImagePicker();
@@ -431,101 +405,240 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
   }
 
   // Handle back button press
-  Future<bool> _onWillPop() async {
-    // If user hasn't started payment, allow normal back navigation
-    if (!hasStartedPayment && !showBankDetails) {
-      return true;
+  // Future<bool> _onWillPop() async {
+  //   // If user hasn't started payment, allow normal back navigation
+  //   if (!hasStartedPayment && !showBankDetails) {
+  //     return true;
+  //   }
+
+  //   // Show confirmation dialog
+  //   final bool? shouldPop = await showDialog<bool>(
+  //     context: context,
+  //     builder: (context) => WillPopScope(
+  //       onWillPop: () async =>
+  //           true, // Allow dialog to be dismissed by back button
+  //       child: AlertDialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(16),
+  //         ),
+  //         title: Row(
+  //           children: [
+  //             Icon(
+  //               Icons.warning_amber_rounded,
+  //               color: Colors.orange[700],
+  //               size: 28,
+  //             ),
+  //             const SizedBox(width: 8),
+  //             const Text(
+  //               'Exit App?',
+  //               style: TextStyle(fontWeight: FontWeight.bold),
+  //             ),
+  //           ],
+  //         ),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             const Text(
+  //               'Are you sure you want to exit the app?',
+  //               style: TextStyle(fontSize: 16),
+  //             ),
+  //             const SizedBox(height: 12),
+  //             Container(
+  //               padding: const EdgeInsets.all(12),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.orange.shade50,
+  //                 borderRadius: BorderRadius.circular(8),
+  //                 border: Border.all(color: Colors.orange.shade200),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   Icon(
+  //                     Icons.info_outline,
+  //                     size: 20,
+  //                     color: Colors.orange[800],
+  //                   ),
+  //                   const SizedBox(width: 8),
+  //                   Expanded(
+  //                     child: Text(
+  //                       'Your payment progress will be lost if you exit now.',
+  //                       style: TextStyle(
+  //                         color: Colors.orange[800],
+  //                         fontSize: 13,
+  //                         fontWeight: FontWeight.w500,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(false),
+  //             style: TextButton.styleFrom(
+  //               foregroundColor: Colors.grey[700],
+  //             ),
+  //             child: const Text(
+  //               'STAY',
+  //               style: TextStyle(fontWeight: FontWeight.bold),
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () => Navigator.of(context).pop(true),
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: Colors.red,
+  //               foregroundColor: Colors.white,
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //             ),
+  //             child: const Text(
+  //               'EXIT',
+  //               style: TextStyle(fontWeight: FontWeight.bold),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+
+  //   return shouldPop ?? false;
+  // }
+
+// Add this method to your _VendorJoiningFeeScreenState class
+  Future<bool> _checkVendorHasPlan() async {
+    if (vendorId == null) {
+      debugPrint('⚠️ vendorId is null');
+      return false;
     }
 
-    // Show confirmation dialog
+    try {
+      debugPrint('🔍 Checking plan for vendor: $vendorId');
+
+      // Use the myplan API to check if vendor has a plan
+      final res = await http.get(
+        Uri.parse("$baseUrl/vendor/myplan/$vendorId"),
+      );
+
+      debugPrint('📡 Response status: ${res.statusCode}');
+      debugPrint('📡 Response body: ${res.body}');
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+
+        // Check if vendor has an active plan
+        if (body['success'] == true && body['data'] != null) {
+          final planData = body['data'];
+
+          // Check if plan is active (not expired)
+          if (planData['expiryDate'] != null) {
+            final expiryDate = DateTime.parse(planData['expiryDate']);
+            final isActive = DateTime.now().isBefore(expiryDate);
+            debugPrint('✅ Plan active: $isActive, Expires: $expiryDate');
+            return isActive;
+          }
+
+          debugPrint('✅ Has plan data (no expiry)');
+          return true; // Has plan data even if no expiry
+        }
+      }
+
+      debugPrint('❌ No active plan found');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error checking plan: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _showExitConfirmationDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Exit'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldExit ?? false;
+  }
+
+  // In VendorJoiningFeeScreen, update the _onWillPop method
+  Future<bool> _onWillPop() async {
+    final hasPlan = await _checkVendorHasPlan();
+
+    if (hasPlan && mounted) {
+      // Navigate back to main screen
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        // If can't pop, push main screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const VendorMainScreen(),
+          ),
+        );
+      }
+      return false;
+    }
+
+    // If user hasn't started payment, allow normal back navigation
+    if (!hasStartedPayment && !showBankDetails) {
+      if (Navigator.canPop(context)) {
+        return true;
+      } else {
+        return _showExitConfirmationDialog();
+      }
+    }
+
+    // Show confirmation dialog for payment progress
     final bool? shouldPop = await showDialog<bool>(
       context: context,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => true, // Allow dialog to be dismissed by back button
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange[700],
-                size: 28,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Exit App?',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Are you sure you want to exit the app?',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      size: 20,
-                      color: Colors.orange[800],
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Your payment progress will be lost if you exit now.',
-                        style: TextStyle(
-                          color: Colors.orange[800],
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[700],
-              ),
-              child: const Text(
-                'STAY',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'EXIT',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
+        title: const Text('Discard Progress?'),
+        content: const Text(
+          'Are you sure you want to go back? Your payment progress will be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('DISCARD'),
+          ),
+        ],
       ),
     );
 
@@ -536,7 +649,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
 
   Future<void> fetchVendor() async {
     try {
-      final res = await http.get(Uri.parse("$baseUrl/vendor/profile/$vendorId"));
+      final res =
+          await http.get(Uri.parse("$baseUrl/vendor/profile/$vendorId"));
       final body = jsonDecode(res.body);
 
       if (body['success'] == true) {
@@ -611,7 +725,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
           paymentScreenshot = file;
           screenshotPreviewPath = pickedFile.path;
           error = '';
-          hasStartedPayment = true; // Mark that user has started payment process
+          hasStartedPayment =
+              true; // Mark that user has started payment process
         });
       }
     } catch (e) {
@@ -678,8 +793,9 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
       request.fields['paymentMethod'] = 'bank_transfer';
       request.fields['bankDetails'] = jsonEncode(bankDetails);
       request.fields['amount'] = gst['total'].toString();
-      request.fields['restaurantName'] = vendor?['restaurantName'] ?? 
-          VendorPreferences.getVendor()?.restaurantName ?? 'N/A';
+      request.fields['restaurantName'] = vendor?['restaurantName'] ??
+          VendorPreferences.getVendor()?.restaurantName ??
+          'N/A';
 
       // Add screenshot if selected
       if (paymentScreenshot != null) {
@@ -856,7 +972,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
               onPressed: () {
                 setState(() {
                   showBankDetails = true;
-                  hasStartedPayment = true; // Mark that user has started payment process
+                  hasStartedPayment =
+                      true; // Mark that user has started payment process
                 });
               },
               style: ElevatedButton.styleFrom(
@@ -1059,10 +1176,12 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          entry.key.replaceAllMapped(
-                            RegExp(r'([A-Z])'),
-                            (match) => ' ${match.group(1)}',
-                          ).toUpperCase(),
+                          entry.key
+                              .replaceAllMapped(
+                                RegExp(r'([A-Z])'),
+                                (match) => ' ${match.group(1)}',
+                              )
+                              .toUpperCase(),
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey[600],
@@ -1090,7 +1209,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.blue.shade100,
                         borderRadius: BorderRadius.circular(6),
@@ -1188,7 +1308,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
                 LinearProgressIndicator(
                   value: uploadProgress,
                   backgroundColor: Colors.blue.shade100,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
                 ),
               ],
             ),
@@ -1322,7 +1443,8 @@ class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade200,
                       borderRadius: BorderRadius.circular(8),
