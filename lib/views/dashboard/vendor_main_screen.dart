@@ -368,7 +368,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
   Future<void> _fetchVendorStatus(String vendorId) async {
     try {
       final res = await http.get(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/vendorstatus/$vendorId'),
+        Uri.parse('https://api.vegiffy.in/api/vendor/vendorstatus/$vendorId'),
       );
 
       if (res.statusCode == 200) {
@@ -387,7 +387,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
 
     try {
       await http.put(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/vendorstatus/$vendorId'),
+        Uri.parse('https://api.vegiffy.in/api/vendor/vendorstatus/$vendorId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'status': value ? 'active' : 'inactive'}),
       );
@@ -405,7 +405,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
   Future<void> _fetchNotificationCount(String vendorId) async {
     try {
       final res = await http.get(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/notification/$vendorId'),
+        Uri.parse('https://api.vegiffy.in/api/vendor/notification/$vendorId'),
       );
 
       if (res.statusCode == 200) {
@@ -480,8 +480,7 @@ class _VendorMainScreenState extends State<VendorMainScreen> {
       );
 
       final res = await http.delete(
-        Uri.parse(
-            'https://api.vegiffyy.com/api/vendor/delete-vendor/$vendorId'),
+        Uri.parse('https://api.vegiffy.in/api/vendor/delete-vendor/$vendorId'),
       );
 
       if (res.statusCode == 200) {

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ProductService {
-  static const baseUrl = "https://api.vegiffyy.com/api";
+  static const baseUrl = "https://api.vegiffy.in/api";
 
   /// GET PRODUCTS
   static Future<Map<String, dynamic>> getProducts(String vendorId) async {

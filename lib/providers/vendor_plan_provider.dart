@@ -23,7 +23,7 @@ class VendorPlanProvider extends ChangeNotifier {
 
       final res = await http
           .get(
-        Uri.parse('https://api.vegiffyy.com/api/vendor/myplan/$vendorId'),
+        Uri.parse('https://api.vegiffy.in/api/vendor/myplan/$vendorId'),
       )
           .timeout(
         const Duration(seconds: 10),

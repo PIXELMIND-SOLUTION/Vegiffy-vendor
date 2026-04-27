@@ -19,7 +19,7 @@ class AccountManagementScreen extends StatefulWidget {
 class _AccountManagementScreenState extends State<AccountManagementScreen> {
   String? vendorId;
 
-  final String baseUrl = "https://api.vegiffyy.com/api/vendor";
+  final String baseUrl = "https://api.vegiffy.in/api/vendor";
 
   bool loading = false;
   List accounts = [];

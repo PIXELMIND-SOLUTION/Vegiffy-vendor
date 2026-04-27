@@ -54,7 +54,7 @@
 //     });
 
 //     try {
-//       final uri = Uri.parse("https://api.vegiffyy.com/api/restaurant");
+//       final uri = Uri.parse("https://api.vegiffy.in/api/restaurant");
 //       final request = http.MultipartRequest("POST", uri);
 
 //       // Add form fields
@@ -207,7 +207,7 @@
 //                 ),
 //               ),
 //               const SizedBox(height: 24),
-              
+
 //               // Basic Information
 //               _buildSection(
 //                 title: 'Basic Information',
@@ -218,9 +218,9 @@
 //                   _buildInfoRow('Location Name', widget.formData['locationName']),
 //                 ],
 //               ),
-              
+
 //               const SizedBox(height: 16),
-              
+
 //               // Contact Information
 //               _buildSection(
 //                 title: 'Contact Information',
@@ -234,9 +234,9 @@
 //                     _buildInfoRow('Referral Code', widget.formData['referralCode']),
 //                 ],
 //               ),
-              
+
 //               const SizedBox(height: 16),
-              
+
 //               // Location Details
 //               _buildSection(
 //                 title: 'Location Details',
@@ -246,9 +246,9 @@
 //                   _buildInfoRow('Longitude', widget.formData['lng']),
 //                 ],
 //               ),
-              
+
 //               const SizedBox(height: 16),
-              
+
 //               // Business Settings
 //               _buildSection(
 //                 title: 'Business Settings',
@@ -258,9 +258,9 @@
 //                   _buildInfoRow('Discount', '${widget.formData['discount']}%'),
 //                 ],
 //               ),
-              
+
 //               const SizedBox(height: 16),
-              
+
 //               // Uploaded Documents
 //               _buildSection(
 //                 title: 'Uploaded Documents',
@@ -273,9 +273,9 @@
 //                         ))
 //                     .toList(),
 //               ),
-              
+
 //               const SizedBox(height: 24),
-              
+
 //               // Terms & Conditions
 //               Container(
 //                 padding: const EdgeInsets.all(16),
@@ -315,7 +315,7 @@
 //             ],
 //           ),
 //         ),
-        
+
 //         // Loading indicator
 //         if (_isSubmitting)
 //           Container(
@@ -338,7 +338,7 @@
 //               ],
 //             ),
 //           ),
-        
+
 //         // Bottom buttons
 //         Container(
 //           padding: const EdgeInsets.all(20),
@@ -550,25 +550,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -625,7 +606,7 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
     });
 
     try {
-      final uri = Uri.parse("https://api.vegiffyy.com/api/restaurant");
+      final uri = Uri.parse("https://api.vegiffy.in/api/restaurant");
       final request = http.MultipartRequest("POST", uri);
 
       // Add form fields
@@ -679,7 +660,6 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
       } else {
         _showError(data["message"] ?? "Registration failed. Please try again.");
       }
-
     } catch (e) {
       setState(() => _isSubmitting = false);
       _showError("Network error. Please check your connection and try again.");
@@ -783,24 +763,26 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Basic Information
               _buildSection(
                 title: 'Basic Information',
                 icon: Icons.info_outline,
                 children: [
-                  _buildInfoRow('Restaurant Name', widget.formData['restaurantName']),
+                  _buildInfoRow(
+                      'Restaurant Name', widget.formData['restaurantName']),
                   _buildInfoRow('Description', widget.formData['description']),
-                  _buildInfoRow('Location Name', widget.formData['locationName']),
+                  _buildInfoRow(
+                      'Location Name', widget.formData['locationName']),
                   // 👇 NEW: Full Address
                   _buildInfoRow('Full Address', widget.formData['fullAddress']),
                   // 👇 NEW: FSSAI Number
                   _buildInfoRow('FSSAI Number', widget.formData['fssaiNo']),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Contact Information
               _buildSection(
                 title: 'Contact Information',
@@ -811,12 +793,13 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                   if (widget.formData['gstNumber']?.isNotEmpty ?? false)
                     _buildInfoRow('GST Number', widget.formData['gstNumber']),
                   if (widget.formData['referralCode']?.isNotEmpty ?? false)
-                    _buildInfoRow('Referral Code', widget.formData['referralCode']),
+                    _buildInfoRow(
+                        'Referral Code', widget.formData['referralCode']),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Location Details
               _buildSection(
                 title: 'Location Details',
@@ -826,30 +809,33 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                   _buildInfoRow('Longitude', widget.formData['lng']),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Business Settings
               _buildSection(
                 title: 'Business Settings',
                 icon: Icons.business_center,
                 children: [
-                  _buildInfoRow('Commission', '${widget.formData['commission']}%'),
+                  _buildInfoRow(
+                      'Commission', '${widget.formData['commission']}%'),
                   _buildInfoRow('Discount', '${widget.formData['discount']}%'),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // 👇 NEW: Disclaimers Section
-              if (widget.formData['disclaimers'] != null && 
+              if (widget.formData['disclaimers'] != null &&
                   (widget.formData['disclaimers'] as List).isNotEmpty)
                 _buildSection(
                   title: 'Additional Disclaimers',
                   icon: Icons.warning_amber,
-                  children: (widget.formData['disclaimers'] as List).map((disclaimer) {
+                  children: (widget.formData['disclaimers'] as List)
+                      .map((disclaimer) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(color: Colors.grey[200]!),
@@ -888,9 +874,9 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                     );
                   }).toList(),
                 ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Uploaded Documents
               _buildSection(
                 title: 'Uploaded Documents',
@@ -903,9 +889,9 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                         ))
                     .toList(),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Terms & Conditions
               Container(
                 padding: const EdgeInsets.all(16),
@@ -919,7 +905,8 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.verified_user, color: Colors.blue[700], size: 20),
+                        Icon(Icons.verified_user,
+                            color: Colors.blue[700], size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Terms & Conditions',
@@ -945,7 +932,7 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
             ],
           ),
         ),
-        
+
         // Loading indicator
         if (_isSubmitting)
           Container(
@@ -968,7 +955,7 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
               ],
             ),
           ),
-        
+
         // Bottom buttons
         Container(
           padding: const EdgeInsets.all(20),
@@ -1021,7 +1008,8 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -1071,7 +1059,8 @@ class _ReviewSubmitScreenState extends State<ReviewSubmitScreen> {
                     color: Theme.of(context).primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+                  child: Icon(icon,
+                      color: Theme.of(context).primaryColor, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(

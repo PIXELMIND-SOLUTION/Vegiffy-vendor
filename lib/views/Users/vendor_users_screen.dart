@@ -17,7 +17,7 @@ class VendorUsersScreen extends StatefulWidget {
 class _VendorUsersScreenState extends State<VendorUsersScreen> {
   String? vendorId;
 
-  final String baseUrl = "https://api.vegiffyy.com/api/vendor";
+  final String baseUrl = "https://api.vegiffy.in/api/vendor";
 
   bool loading = true;
   List<Map<String, dynamic>> users = [];

@@ -14,7 +14,7 @@ class DashboardService {
   /// GET: /vendor/dashboard/{vendorId}
   Future<DashboardResponse> fetchDashboard(String vendorId) async {
     final uri = Uri.parse('${ApiConstants.vendorDashboard}/$vendorId');
-    // Example: http://31.97.206.144:5051/api/vendor/dashboard/692d62ec...
+    // Example: https://api.vegiffy.in/api/vendor/dashboard/692d62ec...
 
     final res = await _client.get(uri);
     // debug
@@ -36,7 +36,7 @@ class DashboardService {
   /// GET: /vendor/restaurantorders/{vendorId}
   Future<List<OrderModel>> fetchRestaurantOrders(String vendorId) async {
     final uri = Uri.parse('${ApiConstants.vendorRestaurantOrders}/$vendorId');
-    // Example: http://31.97.206.144:5051/api/vendor/restaurantorders/692d...
+    // Example: https://api.vegiffy.in/api/vendor/restaurantorders/692d...
 
     final res = await _client.get(uri);
     print('Orders URL: $uri');
@@ -62,7 +62,7 @@ class DashboardService {
   Future<List<RestaurantProduct>> fetchRestaurantProducts(
       String vendorId) async {
     final uri = Uri.parse('${ApiConstants.restaurantProducts}/$vendorId');
-    // Example: http://31.97.206.144:5051/api/restaurant-products/692d...
+    // Example: https://api.vegiffy.in/api/restaurant-products/692d...
 
     final res = await _client.get(uri);
     print('Products URL: $uri');
@@ -99,7 +99,7 @@ class DashboardService {
     required String status,
   }) async {
     final uri = Uri.parse('${ApiConstants.acceptOrder}/$orderId/$vendorId');
-    // Example: http://31.97.206.144:5051/api/acceptorder/ORDERID/VENDORID
+    // Example: https://api.vegiffy.in/api/acceptorder/ORDERID/VENDORID
 
     debugPrint('📞 ACCEPT ORDER CALLED - $uri');
 

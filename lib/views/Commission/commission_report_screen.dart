@@ -17,7 +17,7 @@ class CommissionReportScreen extends StatefulWidget {
 
 class _CommissionReportScreenState extends State<CommissionReportScreen> {
   String? vendorId;
-  final String baseUrl = "https://api.vegiffyy.com/api";
+  final String baseUrl = "https://api.vegiffy.in/api";
 
   // Tax constants
   final int GST_RATE = 18;

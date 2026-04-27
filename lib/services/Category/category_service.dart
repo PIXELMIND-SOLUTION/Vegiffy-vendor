@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:vegiffyy_vendor/models/Category/category_model.dart';
 
 class CategoryService {
-  static const base = "http://31.97.206.144:5051/api/category";
+  static const base = "https://api.vegiffy.in/api/category";
 
   /// 🔹 FETCH CATEGORIES
   Future<List<CategoryModel>> fetch() async {
@@ -55,8 +55,7 @@ class CategoryService {
   }
 
   /// 🔹 UPDATE CATEGORY
-  Future<void> updateCategory(
-      String id, String name, String? imagePath) async {
+  Future<void> updateCategory(String id, String name, String? imagePath) async {
     final req = http.MultipartRequest('PUT', Uri.parse("$base/$id"));
     req.fields['categoryName'] = name;
 

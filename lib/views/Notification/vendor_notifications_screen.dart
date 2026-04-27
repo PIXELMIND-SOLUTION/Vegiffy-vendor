@@ -39,7 +39,7 @@ class _VendorNotificationsScreenState extends State<VendorNotificationsScreen> {
     try {
       final res = await http.get(
         Uri.parse(
-          'https://api.vegiffyy.com/api/vendor/notification/${widget.vendorId}',
+          'https://api.vegiffy.in/api/vendor/notification/${widget.vendorId}',
         ),
       );
 
@@ -65,7 +65,7 @@ class _VendorNotificationsScreenState extends State<VendorNotificationsScreen> {
     try {
       final res = await http.delete(
         Uri.parse(
-            'https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
+            'https://api.vegiffy.in/api/vendor/deletenotification/${widget.vendorId}'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -117,7 +117,7 @@ class _VendorNotificationsScreenState extends State<VendorNotificationsScreen> {
     try {
       final res = await http.delete(
         Uri.parse(
-            'https://api.vegiffyy.com/api/vendor/deletenotification/${widget.vendorId}'),
+            'https://api.vegiffy.in/api/vendor/deletenotification/${widget.vendorId}'),
         headers: {
           'Content-Type': 'application/json',
         },

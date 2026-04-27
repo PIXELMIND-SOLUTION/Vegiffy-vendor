@@ -4,10 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:vegiffyy_vendor/models/Profile/vendor_model.dart';
 
 class VendorService {
-  static const base = "http://31.97.206.144:5051/api";
+  static const base = "https://api.vegiffy.in/api";
 
   Future<VendorModel> fetchProfile(String vendorId) async {
-        print("lllllllllllllllllllllllllllllllllllll$vendorId");
+    print("lllllllllllllllllllllllllllllllllllll$vendorId");
 
     final res = await http.get(Uri.parse("$base/profile/$vendorId"));
     final body = jsonDecode(res.body);

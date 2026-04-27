@@ -17,7 +17,7 @@ class VendorMyPlansScreen extends StatefulWidget {
 class _VendorMyPlansScreenState extends State<VendorMyPlansScreen> {
   String? vendorId;
 
-  final String baseUrl = "https://api.vegiffyy.com/api/vendor";
+  final String baseUrl = "https://api.vegiffy.in/api/vendor";
 
   bool loading = true;
   List<Map<String, dynamic>> plans = [];

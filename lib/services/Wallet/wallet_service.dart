@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class WalletService {
-  static const base = "https://api.vegiffyy.com/api";
+  static const base = "https://api.vegiffy.in/api";
 
   static Future<Map<String, dynamic>> getWallet(String vendorId) async {
     final res = await http.get(Uri.parse("$base/getwallet/$vendorId"));

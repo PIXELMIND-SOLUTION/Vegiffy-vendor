@@ -3,7 +3,7 @@
 // import 'package:vegiffyy_vendor/models/Booking/booking_model.dart';
 
 // class BookingService {
-//   static const baseUrl = "https://api.vegiffyy.com/api";
+//   static const baseUrl = "https://api.vegiffy.in/api";
 
 //   static Future<List<BookingModel>> fetchBookings(String vendorId) async {
 //     final res = await http.get(
@@ -41,28 +41,12 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:vegiffyy_vendor/models/Booking/booking_model.dart';
 
 class BookingService {
-  static const baseUrl = "https://api.vegiffyy.com/api";
+  static const baseUrl = "https://api.vegiffy.in/api";
 
   /// ==========================
   /// FETCH ALL BOOKINGS
@@ -77,9 +61,7 @@ class BookingService {
       throw Exception("Failed to fetch orders");
     }
 
-    return (data['data'] as List)
-        .map((e) => BookingModel.fromJson(e))
-        .toList();
+    return (data['data'] as List).map((e) => BookingModel.fromJson(e)).toList();
   }
 
   /// ==========================
@@ -94,8 +76,7 @@ class BookingService {
     return bookings
         .where(
           (order) =>
-              order.status != null &&
-              order.status.toLowerCase() == "pending",
+              order.status != null && order.status.toLowerCase() == "pending",
         )
         .toList();
   }

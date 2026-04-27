@@ -16,7 +16,7 @@
 
 // class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
 //    String? vendorId;
-//   final String baseUrl = "https://api.vegiffyy.com/api";
+//   final String baseUrl = "https://api.vegiffy.in/api";
 
 //   final int GST_RATE = 18;
 
@@ -339,7 +339,7 @@ class VendorJoiningFeeScreen extends StatefulWidget {
 
 class _VendorJoiningFeeScreenState extends State<VendorJoiningFeeScreen> {
   String? vendorId;
-  final String baseUrl = "https://api.vegiffyy.com/api";
+  final String baseUrl = "https://api.vegiffy.in/api";
 
   final int GST_RATE = 18;
 

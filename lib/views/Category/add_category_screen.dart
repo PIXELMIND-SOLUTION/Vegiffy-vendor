@@ -52,7 +52,7 @@
 //     setState(() => _loading = true);
 
 //     try {
-//       final uri = Uri.parse("http://31.97.206.144:5051/api/category");
+//       final uri = Uri.parse("https://api.vegiffy.in/api/category");
 //       final request = http.MultipartRequest('POST', uri);
 
 //       request.fields['categoryName'] = _categoryController.text.trim();
@@ -357,22 +357,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -437,7 +421,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
     setState(() => _loading = true);
 
     try {
-      final uri = Uri.parse("http://31.97.206.144:5051/api/category");
+      final uri = Uri.parse("https://api.vegiffy.in/api/category");
       final request = http.MultipartRequest('POST', uri);
 
       request.fields['categoryName'] = _categoryController.text.trim();

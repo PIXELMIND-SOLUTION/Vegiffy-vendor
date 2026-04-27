@@ -17,7 +17,7 @@ class AddEditAccountScreen extends StatefulWidget {
 }
 
 class _AddEditAccountScreenState extends State<AddEditAccountScreen> {
-  final String baseUrl = "https://api.vegiffyy.com/api/vendor";
+  final String baseUrl = "https://api.vegiffy.in/api/vendor";
 
   final _formKey = GlobalKey<FormState>();
 

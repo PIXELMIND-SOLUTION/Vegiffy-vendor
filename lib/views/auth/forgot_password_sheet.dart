@@ -55,7 +55,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
     });
 
     final res = await http.post(
-      Uri.parse('https://api.vegiffyy.com/api/vendor/forgot-password'),
+      Uri.parse('https://api.vegiffy.in/api/vendor/forgot-password'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': emailCtrl.text.trim().toLowerCase()}),
     );
@@ -93,8 +93,8 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
     final password = passCtrl.text;
 
     if (!passwordRegex.hasMatch(password)) {
-      setState(() => message =
-          'Password must contain letter, number & special character');
+      setState(() =>
+          message = 'Password must contain letter, number & special character');
       return;
     }
 
@@ -106,7 +106,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
     setState(() => loading = true);
 
     final res = await http.post(
-      Uri.parse('https://api.vegiffyy.com/api/vendor/reset-password'),
+      Uri.parse('https://api.vegiffy.in/api/vendor/reset-password'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': emailCtrl.text.trim().toLowerCase(),
@@ -129,8 +129,7 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
     }
   }
 
-  String format(int s) =>
-      '${(s ~/ 60)}:${(s % 60).toString().padLeft(2, '0')}';
+  String format(int s) => '${(s ~/ 60)}:${(s % 60).toString().padLeft(2, '0')}';
 
   // ================= UI =================
   @override
@@ -216,12 +215,10 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
                   suffixIcon: IconButton(
                     icon: Icon(
                         showConfirm ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () =>
-                        setState(() => showConfirm = !showConfirm),
+                    onPressed: () => setState(() => showConfirm = !showConfirm),
                   ),
                 ),
               ),
-
               const SizedBox(height: 8),
               const Align(
                 alignment: Alignment.centerLeft,
@@ -230,7 +227,6 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
-
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: loading ? null : resetPassword,
